@@ -1,3 +1,9 @@
+## [1.1.1](https://github.com/qmhc/grid-layout-plus/compare/v1.1.0...v1.1.1) (2025-10-13)
+
+### 🐞 Bug Fixes
+
+- release detached DOM nodes on destroy ([#56](https://github.com/qmhc/grid-layout-plus/issues/56)) ([20ddeb7](https://github.com/qmhc/grid-layout-plus/commit/20ddeb7d3efcf2ef3e9f14e87f3b548452e022d7))
+
 # [1.1.0](https://github.com/qmhc/grid-layout-plus/compare/v1.0.6...v1.1.0) (2025-05-07)
 
 ### 🐞 Bug Fixes
