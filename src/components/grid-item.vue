@@ -1,4 +1,17 @@
 <script setup lang="ts">
+/**
+ * GridItem 组件（单个网格子项）
+ * 职责概述：
+ * 1. 接收父级 GridLayout 注入的布局环境（列数、容器宽度、行高、间距、交互开关等）并与自身 props 合并。
+ * 2. 将网格坐标 (x,y,w,h) 与像素定位/尺寸互相转换：calcPosition -> 网格单位转像素；calcXY/calcWH -> 像素转网格单位。
+ * 3. 管理拖拽与缩放交互（基于 interactjs），在 drag/resize 三阶段中维护临时状态并派发事件：move/moved、resize/resized。
+ * 4. 支持 RTL 与镜像模式：通过 renderRtl 计算对 left/right 的差异处理，以及使用 setTransformRtl / setTopRight。
+ * 5. 支持受限（bounded）拖拽：根据当前容器宽高边界裁剪拖拽结果（clamp）。
+ * 6. 在外部环境变化（列数、容器宽度、行高、间距、交互开关等）时，自动重建样式（createStyle）确保表现同步。
+ * 7. 对最小/最大尺寸、纵向/横向约束做统一裁剪，避免越界与非法区域。
+ * 8. 通过事件总线 (emitter) 与父布局协同：监听 updateWidth/compact 等指令；向父布局广播 dragEvent/resizeEvent 阶段事件。
+ */
+
 import {
   computed,
   inject,
@@ -32,20 +45,20 @@ import interact from 'interactjs'
 import type { GridItemProps } from './types'
 
 const props = withDefaults(defineProps<GridItemProps>(), {
-  isDraggable: undefined,
-  isResizable: undefined,
-  isBounded: undefined,
-  static: false,
-  minH: 1,
-  minW: 1,
-  maxH: Infinity,
-  maxW: Infinity,
-  dragIgnoreFrom: 'a, button',
-  dragAllowFrom: undefined,
-  resizeIgnoreFrom: 'a, button',
-  preserveAspectRatio: false,
-  dragOption: () => ({}),
-  resizeOption: () => ({}),
+  isDraggable: undefined, // 可拖拽覆盖父级，undefined 继承父级，false 禁止拖动
+  isResizable: undefined, // 可缩放覆盖父级，undefined 继承父级，false 禁止缩放
+  isBounded: undefined, // 是否受容器边界限制，undefined 继承父级，true 使用 clamp 截断
+  static: false, // 静态模式：禁用拖拽与缩放且不参与压缩
+  minH: 1, // 最小高度(行数)
+  minW: 1, // 最小宽度(列数)
+  maxH: Infinity, // 最大高度(行数) Infinity 不限制
+  maxW: Infinity, // 最大宽度(列数) Infinity 不限制
+  dragIgnoreFrom: 'a, button', // 拖拽忽略选择器，逗号分隔
+  dragAllowFrom: undefined, // 仅允许拖拽的起始选择器，设置后其它区域不可拖拽
+  resizeIgnoreFrom: 'a, button', // 缩放忽略选择器
+  preserveAspectRatio: false, // 是否保持宽高比
+  dragOption: () => ({}), // 额外拖拽配置透传 interact.draggable
+  resizeOption: () => ({}), // 额外缩放配置透传 interact.resizable
 })
 
 const emit = defineEmits(['container-resized', 'resize', 'resized', 'move', 'moved'])
@@ -115,59 +128,113 @@ const instance = reactive({
   calcXY,
 })
 
+/**
+ * 接收父布局广播的宽度变化并更新内部 containerWidth。
+ * 会间接影响列宽计算与拖拽/缩放像素换算。
+ * @param width 新容器宽度（像素）
+ */
 function updateWidthHandler(width: number) {
   updateWidth(width)
 }
 
+/**
+ * 父布局触发压缩后同步当前项样式。
+ */
 function compactHandler() {
   compact()
 }
 
+/**
+ * 设置本项是否可拖拽（仅在未显式传入 isDraggable 时生效继承）。
+ * @param isDraggable 是否可拖拽
+ */
 function setDraggableHandler(isDraggable: boolean) {
   if (isNull(props.isDraggable)) {
     state.draggable = isDraggable
   }
 }
 
+/**
+ * 设置本项是否可缩放（仅在未显式传入 isResizable 时生效继承）。
+ * @param isResizable 是否可缩放
+ */
 function setResizableHandler(isResizable: boolean) {
   if (isNull(props.isResizable)) {
     state.resizable = isResizable
   }
 }
 
+/**
+ * 设置本项是否受容器边界限制（仅在未显式传入 isBounded 时生效继承）。
+ * @param isBounded 是否受限
+ */
 function setBoundedHandler(isBounded: boolean) {
   if (isNull(props.isBounded)) {
     state.bounded = isBounded
   }
 }
 
+/**
+ * 同步缩放比例，用于拖拽/缩放增量换算。
+ * @param transformScale 缩放比
+ */
 function setTransformScaleHandler(transformScale: number) {
   state.transformScale = transformScale
 }
 
+/**
+ * 同步行高后用于像素与网格单位之间的转换。
+ * @param rowHeight 行高（像素）
+ */
 function setRowHeightHandler(rowHeight: number) {
   state.rowHeight = rowHeight
 }
 
+/**
+ * 同步最大允许行数限制。
+ * @param maxRows 最大行数
+ */
 function setMaxRowsHandler(maxRows: number) {
   state.maxRows = maxRows
 }
 
+/**
+ * 文档方向变化（LTR/RTL）处理。
+ */
 function directionchangeHandler() {
   state.rtl = getDocumentDir() === 'rtl'
   compact()
 }
 
+/**
+ * 更新列数并向下影响列宽计算。
+ * @param colNum 新列数
+ */
 function setColNum(colNum: number) {
   state.cols = Math.floor(colNum)
 }
 
 layout.increaseItem(instance)
 
+/**
+ * onBeforeMount
+ * 在组件挂载前读取当前文档方向（LTR/RTL），以便首帧渲染就使用正确的 rtl 标记。
+ * 仅设置一次初始 state.rtl，后续方向变化由 directionchangeHandler 处理。
+ */
 onBeforeMount(() => {
   state.rtl = getDocumentDir() === 'rtl'
 })
 
+/**
+ * onMounted
+ * 完整初始化运行态：
+ * 1. 根据是否启用响应式及最近断点确定初始列数 cols；
+ * 2. 同步父布局提供的行高、容器宽度、间距、最大行数等基础尺寸；
+ * 3. 以“局部覆盖优先”策略合并拖拽/缩放/边界/缩放比等交互配置；
+ * 4. 开启 watchEffect，监听传入的 x,y,w,h 变化并重建样式；
+ * 5. 绑定来自父布局的事件（updateWidth/compact/...）实现后续响应；
+ * 通过这些步骤使 GridItem 在首帧后即可准确呈现，并能对后续布局/环境变化即时响应。
+ */
 onMounted(() => {
   if (layout.responsive && layout.lastBreakpoint) {
     state.cols = getColsFromBreakpoint(layout.lastBreakpoint, layout.cols)
@@ -218,6 +285,13 @@ onMounted(() => {
   emitter.on('setColNum', setColNum)
 })
 
+/**
+ * onBeforeUnmount
+ * 组件卸载前清理：
+ * 1. 取消所有 emitter 事件监听，防止内存泄漏或卸载后仍触发逻辑。
+ * 2. 解除 interact 实例（unset）释放其内部注册的事件与状态。
+ * 3. 从父级布局注销当前项引用（layout.decreaseItem），确保后续布局计算不再包含此项。
+ */
 onBeforeUnmount(() => {
   emitter.off('updateWidth', updateWidthHandler)
   emitter.off('compact', compactHandler)
@@ -243,10 +317,10 @@ defineExpose({ state, wrapper })
 const isAndroid =
   typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase().includes('android') : false
 
-const resizableAndNotStatic = computed(() => state.resizable && !props.static)
-const renderRtl = computed(() => (layout.isMirrored ? !state.rtl : state.rtl))
+const resizableAndNotStatic = computed(() => state.resizable && !props.static) // 是否显示缩放手柄
+const renderRtl = computed(() => (layout.isMirrored ? !state.rtl : state.rtl)) // 结合镜像与文档方向得到最终渲染方向
 const draggableOrResizableAndNotStatic = computed(() => {
-  return (state.draggable || state.resizable) && !props.static
+  return (state.draggable || state.resizable) && !props.static // 是否存在任一交互能力且非静态
 })
 
 const nh = useNameHelper('item')
@@ -254,13 +328,13 @@ const nh = useNameHelper('item')
 const className = computed(() => {
   return {
     [nh.b()]: true,
-    [nh.bm('resizable')]: resizableAndNotStatic.value,
-    [nh.bm('static')]: props.static,
-    [nh.bm('resizing')]: state.isResizing,
-    [nh.bm('dragging')]: state.isDragging,
-    [nh.bm('transform')]: state.useCssTransforms,
-    [nh.bm('rtl')]: renderRtl.value,
-    [nh.bm('no-touch')]: isAndroid && draggableOrResizableAndNotStatic.value,
+    [nh.bm('resizable')]: resizableAndNotStatic.value, // 可缩放
+    [nh.bm('static')]: props.static, // 静态锁定
+    [nh.bm('resizing')]: state.isResizing, // 缩放中
+    [nh.bm('dragging')]: state.isDragging, // 拖拽中
+    [nh.bm('transform')]: state.useCssTransforms, // 使用 transform 布局模式
+    [nh.bm('rtl')]: renderRtl.value, // RTL 渲染修饰
+    [nh.bm('no-touch')]: isAndroid && draggableOrResizableAndNotStatic.value, // Android 下禁用触摸样式修饰
   }
 })
 const resizerClass = computed(() => {
@@ -268,62 +342,73 @@ const resizerClass = computed(() => {
   return [nh.be('resizer'), renderRtl.value && nh.bem('resizer', 'rtl')].filter(Boolean)
 })
 
+// 监听外部 isDraggable 变更 -> 直接覆盖内部 draggable 状态，后续由 tryMakeDraggable 根据最新值重新配置
 watch(
   () => props.isDraggable,
   value => {
     state.draggable = value
   },
-)
+) 
+// 监听 static 切换 -> 重新尝试创建/禁用拖拽与缩放（静态时两者均禁用）
 watch(
   () => props.static,
   () => {
     nextTickOnce(tryMakeDraggable)
     nextTickOnce(tryMakeResizable)
   },
-)
+) 
+// 监听内部 draggable 状态变化 -> 延迟到下一个 tick 重建拖拽实例配置（避免在同一同步周期反复初始化）
 watch(
   () => state.draggable,
   () => {
     nextTickOnce(tryMakeDraggable)
   },
-)
+) 
+// 监听外部 isResizable 变更 -> 直接同步到内部 resizable，随后由对应 watcher 触发重建缩放实例
 watch(
   () => props.isResizable,
   value => {
     state.resizable = value
   },
-)
+) 
+// 监听外部 isBounded 变更 -> 更新是否启用受限拖拽，影响 dragmove 时 clamp 边界裁剪
 watch(
   () => props.isBounded,
   value => {
     state.bounded = value
   },
-)
+) 
+// 监听内部 resizable 状态变化 -> 下一个 tick 重建缩放配置（边缘、约束、光标等）
 watch(
   () => state.resizable,
   () => {
     nextTickOnce(tryMakeResizable)
   },
-)
+) 
+// 监听行高变化 -> 重算定位与尺寸并向外派发容器实际像素尺寸更新
 watch(
   () => state.rowHeight,
   () => {
     nextTickOnce(createStyle)
     nextTickOnce(emitContainerResized)
   },
-)
+) 
+// 监听列数或容器宽度变化 -> 影响单列宽度与像素换算，需更新样式与缩放约束并通知尺寸变化
 watch([() => state.cols, () => state.containerWidth], () => {
   nextTickOnce(tryMakeResizable)
   nextTickOnce(createStyle)
   nextTickOnce(emitContainerResized)
-})
+}) 
+// 监听最小/最大行列限制变化 -> 重建缩放时的 restrictSize 约束
 watch([() => props.minH, () => props.maxH, () => props.minW, () => props.maxW], () => {
   nextTickOnce(tryMakeResizable)
-})
+}) 
+// 监听渲染方向 (RTL + mirrored) 变化 -> 需调整缩放边缘、拖拽/定位计算方式与最终样式
 watch(renderRtl, () => {
   nextTickOnce(tryMakeResizable)
   nextTickOnce(createStyle)
-})
+}) 
+// 监听父布局 margin 变化（含整体或单值） -> 更新内部 margin 并重算样式与尺寸回调
 watch([() => layout.margin, () => layout.margin[0], () => layout.margin[1]], () => {
   const margin = layout.margin
 
@@ -334,8 +419,18 @@ watch([() => layout.margin, () => layout.margin[0], () => layout.margin[1]], () 
   state.margin = margin.map(Number)
   nextTickOnce(createStyle)
   nextTickOnce(emitContainerResized)
-})
+}) 
 
+/**
+ * createStyle
+ * 根据内部记录的网格坐标与交互临时状态生成最终内联样式（位置 + 尺寸）。
+ * 逻辑：
+ * 1. 若当前 w 超出列数，裁剪并重设 innerX/innerW。
+ * 2. 基础样式使用 calcPosition 计算（网格单位 -> 像素）。
+ * 3. 若正在拖拽/缩放，优先使用临时的 dragging/resizing 像素值覆盖。
+ * 4. 根据 useCssTransforms 决定采用 transform 还是 top/left 定位；RTL 下切换为 right。
+ * @returns void
+ */
 function createStyle() {
   if (props.x + props.w > state.cols) {
     innerX = 0
@@ -383,6 +478,10 @@ function createStyle() {
   state.style = style
 }
 
+/**
+ * emitContainerResized
+ * 派发当前组件的像素宽高（去掉单位 px），便于外部监听容器内部真实渲染尺寸变化。
+ */
 function emitContainerResized() {
   // this.style has width and height with trailing 'px'. The
   // resized event is without them
@@ -398,6 +497,11 @@ function emitContainerResized() {
   emit('container-resized', props.i, props.h, props.w, styleProps.height, styleProps.width)
 }
 
+/**
+ * handleResize
+ * 处理缩放生命周期事件。
+ * @param event interact 回调事件对象（含 edges）
+ */
 function handleResize(event: MouseEvent & { edges: any }) {
   if (props.static) return
 
@@ -494,6 +598,11 @@ function handleResize(event: MouseEvent & { edges: any }) {
   emitter.emit('resizeEvent', event.type, props.i, innerX, innerY, pos.h, pos.w)
 }
 
+/**
+ * handleDrag
+ * 处理拖拽生命周期事件。
+ * @param event 鼠标/触控事件
+ */
 function handleDrag(event: MouseEvent) {
   if (props.static || state.isResizing) return
 
@@ -605,6 +714,15 @@ function handleDrag(event: MouseEvent) {
   emitter.emit('dragEvent', event.type, props.i, pos.x, pos.y, innerH, innerW)
 }
 
+/**
+ * calcPosition
+ * 网格单位转像素坐标和尺寸。
+ * @param x 列起点
+ * @param y 行起点
+ * @param w 宽度(列数)
+ * @param h 高度(行数)
+ * @returns 像素定位与宽高对象
+ */
 function calcPosition(x: number, y: number, w: number, h: number) {
   const colWidth = calcColWidth()
   // add rtl support
@@ -663,26 +781,44 @@ function calcXY(top: number, left: number) {
   return { x, y }
 }
 
+/**
+ * 计算单列像素宽度。
+ * @returns 单列宽度
+ */
 function calcColWidth() {
   return (state.containerWidth - state.margin[0] * (state.cols + 1)) / state.cols
 }
 
+/**
+ * 网格单位转换为像素尺寸。
+ * @param gridUnits 行或列的跨度
+ * @param colOrRowSize 单列或单行的像素尺寸
+ * @param marginPx 对应方向的间距像素
+ * @returns 像素尺寸
+ */
 function calcGridItemWHPx(gridUnits: number, colOrRowSize: number, marginPx: number) {
   // 0 * Infinity === NaN, which causes problems with resize constraints
   if (!Number.isFinite(gridUnits)) return gridUnits
   return Math.round(colOrRowSize * gridUnits + Math.max(0, gridUnits - 1) * marginPx)
 }
 
+/**
+ * 约束数值在指定区间。
+ * @param num 原始值
+ * @param lowerBound 下界
+ * @param upperBound 上界
+ * @returns 约束后的值
+ */
 function clamp(num: number, lowerBound: number, upperBound: number) {
   return Math.max(Math.min(num, upperBound), lowerBound)
 }
 
 /**
- * Given a height and width in pixel values, calculate grid units.
- * @param height Height in pixels.
- * @param width  Width in pixels.
- * @param autoSizeFlag  function autoSize identifier.
- * @return w, h as grid units.
+ * 像素宽高转换为网格单位。
+ * @param height 像素高度
+ * @param width 像素宽度
+ * @param autoSizeFlag 高度是否向上取整标记
+ * @returns {w,h}
  */
 function calcWH(height: number, width: number, autoSizeFlag = false) {
   const colWidth = calcColWidth()
@@ -704,6 +840,12 @@ function calcWH(height: number, width: number, autoSizeFlag = false) {
   return { w, h }
 }
 
+/**
+ * updateWidth
+ * 更新容器宽度及可选列数。
+ * @param width 新容器宽度
+ * @param colNum 可选新列数
+ */
 function updateWidth(width: number, colNum?: number) {
   state.containerWidth = width
   if (colNum !== undefined && colNum !== null) {
@@ -711,10 +853,18 @@ function updateWidth(width: number, colNum?: number) {
   }
 }
 
+/**
+ * compact
+ * 执行样式重算（一般在父级压缩或外部触发时）。
+ */
 function compact() {
   createStyle()
 }
 
+/**
+ * tryInteract
+ * 初始化 interact 实例（避免重复）。
+ */
 function tryInteract() {
   if (!interactObj.value && wrapper.value) {
     interactObj.value = interact(wrapper.value)
@@ -726,6 +876,10 @@ function tryInteract() {
 
 const throttleDrag = throttle(handleDrag)
 
+/**
+ * tryMakeDraggable
+ * 配置拖拽行为与事件监听，或在不满足条件时禁用。
+ */
 function tryMakeDraggable() {
   tryInteract()
 
@@ -752,6 +906,10 @@ function tryMakeDraggable() {
 
 const throttleResize = throttle(handleResize)
 
+/**
+ * tryMakeResizable
+ * 配置缩放行为与事件监听，计算并传入尺寸约束。
+ */
 function tryMakeResizable() {
   tryInteract()
 

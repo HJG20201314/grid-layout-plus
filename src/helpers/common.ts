@@ -6,10 +6,10 @@ export const LAYOUT_KEY = Symbol('LAYOUT_KEY') as InjectionKey<LayoutInstance>
 export const EMITTER_KEY = Symbol('EMITTER_KEY') as InjectionKey<EventEmitter>
 
 /**
- * Return the bottom coordinate of the layout.
+ * 返回布局的底部坐标。
  *
- * @param layout Layout array.
- * @return Bottom coordinate.
+ * @param layout 布局数组。
+ * @return 底部坐标。
  */
 export function bottom(layout: Layout): number {
   let max = 0
@@ -29,59 +29,58 @@ export function cloneLayout(layout: Layout): Layout {
   return newLayout
 }
 
-// Fast path to cloning, since this is monomorphic
+// 快速路径到克隆，因为这是单态的
 export function cloneLayoutItem(layoutItem: LayoutItem): LayoutItem {
   // return JSON.parse(JSON.stringify(layoutItem))
   return { ...layoutItem }
 }
 
 /**
- * Given two layoutitems, check if they collide.
+ * 给定两个布局项，检查它们是否碰撞。
  *
- * @return True if colliding.
+ * @return 如果碰撞则返回true。
  */
 export function collides(l1: LayoutItem, l2: LayoutItem): boolean {
-  if (l1 === l2) return false // same element
-  if (l1.x + l1.w <= l2.x) return false // l1 is left of l2
-  if (l1.x >= l2.x + l2.w) return false // l1 is right of l2
-  if (l1.y + l1.h <= l2.y) return false // l1 is above l2
-  if (l1.y >= l2.y + l2.h) return false // l1 is below l2
-  return true // boxes overlap
+  if (l1 === l2) return false // 相同元素
+  if (l1.x + l1.w <= l2.x) return false // l1在l2左侧
+  if (l1.x >= l2.x + l2.w) return false // l1在l2右侧
+  if (l1.y + l1.h <= l2.y) return false // l1在l2上方
+  if (l1.y >= l2.y + l2.h) return false // l1在l2下方
+  return true // 盒子重叠
 }
 
 /**
- * Given a layout, compact it. This involves going down each y coordinate and removing gaps
- * between items.
+ * 给定一个布局，对其进行压缩。即遍历每个 y 坐标并移除项目之间的空隙。
  *
- * @param  layout Layout.
- * @param  verticalCompact Whether or not to compact the layout vertically.
- * @param minPositions
- * @return Compacted Layout.
+ * @param  layout 布局。
+ * @param  verticalCompact 是否垂直压缩布局。
+ * @param  minPositions 最小位置映射。
+ * @return 压缩后的布局。
  */
 export function compact(layout: Layout, verticalCompact?: boolean, minPositions?: any): Layout {
-  // Statics go in the compareWith array right away so items flow around them.
+  // 静态项立即放入 compareWith 数组，这样其它项会围绕它们排布。
   const compareWith = getStatics(layout)
-  // We go through the items by row and column.
+  // 按行列遍历所有项。
   const sorted = sortLayoutItemsByRowCol(layout)
-  // Holding for new items.
+  // 存储新项。
   const out: Layout = Array(layout.length)
 
   for (let i = 0, len = sorted.length; i < len; i++) {
     let l = sorted[i]
 
-    // Don't move static elements
+    // 不移动 static 元素
     if (!l.static) {
       l = compactItem(compareWith, l, verticalCompact, minPositions)
 
-      // Add to comparison array. We only collide with items before this one.
-      // Statics are already in this array.
+      // 添加到比较数组，我们只与它之前的元素做碰撞检测。
+      // 静态项已经在该数组中。
       compareWith.push(l)
     }
 
-    // Add to output array to make sure they still come out in the right order.
+    // 添加到输出数组以保证顺序正确。
     out[layout.findIndex(i => i.i === l.i)] = l
 
-    // Clear moved flag, if it exists.
+    // 清除 moved 标记。
     l.moved = false
   }
 
@@ -89,7 +88,7 @@ export function compact(layout: Layout, verticalCompact?: boolean, minPositions?
 }
 
 /**
- * Compact an item in the layout.
+ * 压缩布局中的单个项。
  */
 export function compactItem(
   compareWith: Layout,
@@ -98,7 +97,7 @@ export function compactItem(
   minPositions?: any,
 ): LayoutItem {
   if (verticalCompact) {
-    // Move the element up as far as it can go without colliding.
+    // 在不碰撞的情况下尽可能向上移动元素。
     while (l.y > 0 && !getFirstCollision(compareWith, l)) {
       l.y--
     }
@@ -109,7 +108,7 @@ export function compactItem(
     }
   }
 
-  // Move it down, and keep moving it down if it's colliding.
+  // 向下移动，并持续向下直到不再碰撞。
   let collides
   while ((collides = getFirstCollision(compareWith, l))) {
     l.y = collides.y + collides.h
@@ -118,26 +117,26 @@ export function compactItem(
 }
 
 /**
- * Given a layout, make sure all elements fit within its bounds.
+ * 给定一个布局，确保所有元素都在其边界内。
  *
- * @param  layout Layout array.
- * @param  bounds Number of columns.
+ * @param  layout 布局数组。
+ * @param  bounds 列数边界。
  */
 export function correctBounds(layout: Layout, bounds: { cols: number }): Layout {
   const collidesWith = getStatics(layout)
   for (let i = 0, len = layout.length; i < len; i++) {
     const l = layout[i]
-    // Overflows right
+    // 右侧越界
     if (l.x + l.w > bounds.cols) l.x = bounds.cols - l.w
-    // Overflows left
+    // 左侧越界
     if (l.x < 0) {
       l.x = 0
       l.w = bounds.cols
     }
     if (!l.static) collidesWith.push(l)
     else {
-      // If this is static and collides with other statics, we must move it down.
-      // We have to do something nicer than just letting them overlap.
+      // 如果是 static 且与其它 static 碰撞，则向下移动。
+      // 不能简单重叠，需要更优处理。
       while (getFirstCollision(collidesWith, l)) {
         l.y++
       }
@@ -147,11 +146,11 @@ export function correctBounds(layout: Layout, bounds: { cols: number }): Layout 
 }
 
 /**
- * Get a layout item by ID. Used so we can override later on if necessary.
+ * 通过 ID 获取布局项，便于后续覆盖。
  *
- * @param    layout Layout array.
- * @param   id     ID
- * @return     Item at ID.
+ * @param    layout 布局数组。
+ * @param   id     标识
+ * @return     该 ID 对应的项。
  */
 export function getLayoutItem(layout: Layout, id: number | string): LayoutItem | undefined {
   for (let i = 0, len = layout.length; i < len; i++) {
@@ -160,12 +159,11 @@ export function getLayoutItem(layout: Layout, id: number | string): LayoutItem |
 }
 
 /**
- * Returns the first item this layout collides with.
- * It doesn't appear to matter which order we approach this from, although
- * perhaps that is the wrong thing to do.
+ * 返回与给定项发生碰撞的第一个项。
+ * 遍历顺序似乎无关紧要（也许并不理想）。
  *
- * @param  {Object} layoutItem Layout item.
- * @return {Object|undefined}  A colliding layout item, or undefined.
+ * @param  layoutItem 布局项。
+ * @return 发生碰撞的项，或 undefined。
  */
 export function getFirstCollision(layout: Layout, layoutItem: LayoutItem): LayoutItem | undefined {
   for (let i = 0, len = layout.length; i < len; i++) {
@@ -178,23 +176,22 @@ export function getAllCollisions(layout: Layout, layoutItem: LayoutItem): Array<
 }
 
 /**
- * Get all static elements.
- * @param layout Array of layout objects.
- * @return  Array of static layout items..
+ * 获取所有 static 元素。
+ * @param layout 布局对象数组。
+ * @return  static 布局项数组。
  */
 export function getStatics(layout: Layout): Array<LayoutItem> {
   return layout.filter(l => l.static)
 }
 
 /**
- * Move an element. Responsible for doing cascading movements of other elements.
+ * 移动一个元素，并负责级联移动其它元素。
  *
- * @param        layout Full layout to modify.
- * @param   layoutItem      element to move.
- * @param       x    X position in grid units.
- * @param       y    Y position in grid units.
- * @param      isUserAction If true, designates that the item we're moving is
- *                                     being dragged/resized by th euser.
+ * @param layout 完整布局。
+ * @param layoutItem 要移动的元素。
+ * @param x 网格单位的 X。
+ * @param y 网格单位的 Y。
+ * @param isUserAction 是否用户拖拽/调整导致。
  */
 export function moveElement(
   layout: Layout,
@@ -210,15 +207,15 @@ export function moveElement(
   const oldY = layoutItem.y
 
   const movingUp = y && layoutItem.y > y
-  // This is quite a bit faster than extending the object
+  // 这比扩展对象要快很多
   if (typeof x === 'number') layoutItem.x = x
   if (typeof y === 'number') layoutItem.y = y
   layoutItem.moved = true
 
-  // If this collides with anything, move it.
-  // When doing this comparison, we have to sort the items we compare with
-  // to ensure, in the case of multiple collisions, that we're getting the
-  // nearest collision.
+  // 如果发生碰撞，则移动。
+  // 在进行比较时，我们必须对要比较的项进行排序
+  // 以确保在发生多重碰撞时，我们获得的是
+  // 最近的碰撞。
   let sorted = sortLayoutItemsByRowCol(layout)
   if (movingUp) sorted = sorted.reverse()
   const collisions = getAllCollisions(sorted, layoutItem)
@@ -230,17 +227,17 @@ export function moveElement(
     return layout
   }
 
-  // Move each item that collides away from this element.
+  // 移动每个发生碰撞的项。
   for (let i = 0, len = collisions.length; i < len; i++) {
     const collision = collisions[i]
 
-    // Short circuit so we can't infinite loop
+    // 短路处理，避免无限循环
     if (collision.moved) continue
 
-    // This makes it feel a bit more precise by waiting to swap for just a bit when moving up.
+    // 这样在向上移动时会更精确一些，因为会稍等再交换。
     if (layoutItem.y > collision.y && layoutItem.y - collision.y > collision.h / 4) continue
 
-    // Don't move static items - we have to move *this* element away
+    // 不移动静态项 - 我们必须将 *这个* 元素移开
     if (collision.static) {
       layout = moveElementAwayFromCollision(layout, collision, layoutItem, isUserAction)
     } else {
@@ -252,14 +249,12 @@ export function moveElement(
 }
 
 /**
- * This is where the magic needs to happen - given a collision, move an element away from the collision.
- * We attempt to move it up if there's room, otherwise it goes below.
+ * 根据碰撞结果将元素移开：有空间则尝试向上，否则向下。
  *
- * @param   layout            Full layout to modify.
- * @param   collidesWith Layout item we're colliding with.
- * @param   itemToMove   Layout item we're moving.
- * @param  isUserAction  If true, designates that the item we're moving is being dragged/resized
- *                                   by the user.
+ * @param layout 完整布局。
+ * @param collidesWith 与之碰撞的项。
+ * @param itemToMove 需要移动的项。
+ * @param isUserAction 是否由用户操作触发。
  */
 export function moveElementAwayFromCollision(
   layout: Layout,
@@ -268,11 +263,11 @@ export function moveElementAwayFromCollision(
   isUserAction?: boolean,
 ): Layout {
   const preventCollision = false // we're already colliding
-  // If there is enough space above the collision to put this element, move it there.
-  // We only do this on the main collision as this can get funky in cascades and cause
-  // unwanted swapping behavior.
+  // 如果碰撞上方有足够空间放置该元素，则移动到上方。
+  // 我们只对主要碰撞执行此操作，因为在级联中可能会出现问题
+  // 导致不必要的交换行为。
   if (isUserAction) {
-    // Make a mock item so we don't modify the item here, only modify in moveElement.
+    // 创建一个虚拟项，以便我们在此不修改项，仅在 moveElement 中修改。
     const fakeItem: LayoutItem = {
       x: itemToMove.x,
       y: itemToMove.y,
@@ -286,23 +281,23 @@ export function moveElementAwayFromCollision(
     }
   }
 
-  // Previously this was optimized to move below the collision directly, but this can cause problems
-  // with cascading moves, as an item may actually leapflog a collision and cause a reversal in order.
+  // 之前的优化是直接移动到碰撞下方，但这可能会导致问题
+  // 级联移动时，某个项可能会跳过碰撞并导致顺序反转。
   return moveElement(layout, itemToMove, undefined, itemToMove.y + 1, preventCollision)
 }
 
 /**
- * Helper to convert a number to a percentage string.
+ * 将数字转为百分比字符串。
  *
- * @param   num Any number
- * @return      That number as a percentage.
+ * @param   num 任意数字
+ * @return      百分比字符串。
  */
 export function perc(num: number): string {
   return num * 100 + '%'
 }
 
 export function setTransform(top: number, left: number, width: number, height: number) {
-  // Replace unitless items with px
+  // 将无单位值替换为 px
   const translate = 'translate3d(' + left + 'px,' + top + 'px, 0)'
   return {
     transform: translate,
@@ -316,16 +311,10 @@ export function setTransform(top: number, left: number, width: number, height: n
   }
 }
 /**
- * Just like the setTransform method, but instead it will return a negative value of right.
- *
- * @param top
- * @param right
- * @param width
- * @param height
- * @returns {{transform: string, WebkitTransform: string, MozTransform: string, msTransform: string, OTransform: string, width: string, height: string, position: string}}
+ * 与 setTransform 类似，但返回基于 right 的负值位移。
  */
 export function setTransformRtl(top: number, right: number, width: number, height: number) {
-  // Replace unitless items with px
+  // 将无单位值替换为 px
   const translate = 'translate3d(' + right * -1 + 'px,' + top + 'px, 0)'
   return {
     transform: translate,
@@ -349,13 +338,7 @@ export function setTopLeft(top: number, left: number, width: number, height: num
   }
 }
 /**
- * Just like the setTopLeft method, but instead, it will return a right property instead of left.
- *
- * @param top
- * @param right
- * @param width
- * @param height
- * @returns position style
+ * 与 setTopLeft 类似，但使用 right 而不是 left。
  */
 export function setTopRight(top: number, right: number, width: number, height: number) {
   return {
@@ -368,9 +351,7 @@ export function setTopRight(top: number, right: number, width: number, height: n
 }
 
 /**
- * Get layout items sorted from top left to right and down.
- *
- * @return Layout, sorted static items first.
+ * 获取按从左到右、从上到下排序的布局项，static 优先。
  */
 export function sortLayoutItemsByRowCol(layout: Layout): Layout {
   return Array.from(layout).sort(function (a, b) {
@@ -387,11 +368,11 @@ export function sortLayoutItemsByRowCol(layout: Layout): Layout {
 }
 
 /**
- * Validate a layout. Throws errors.
+ * 校验布局，若不合法则抛出错误。
  *
- * @param layout Array of layout items.
- * @param contextName Context name for errors.
- * @throw Validation error.
+ * @param layout 布局项数组。
+ * @param contextName 错误语境名。
+ * @throw 验证错误。
  */
 export function validateLayout(layout: Layout, contextName?: string): void {
   contextName = contextName || 'Layout'
@@ -427,7 +408,7 @@ export function validateLayout(layout: Layout, contextName?: string): void {
   }
 }
 
-// Flow can't really figure this out, so we just use Object
+// Flow 无法很好推断，这里直接使用 Object
 export function autoBindHandlers(
   el: Record<string, (...args: any[]) => any>,
   fns: Array<string>,
@@ -436,9 +417,7 @@ export function autoBindHandlers(
 }
 
 /**
- * Convert a JS object to CSS string. Similar to React's output of CSS.
- * @param obj
- * @returns
+ * 将 JS 对象转换为 CSS 字符串，类似 React 的输出。
  */
 export function createMarkup(obj: Record<string, any>) {
   const keys = Object.keys(obj)
@@ -456,7 +435,7 @@ export function createMarkup(obj: Record<string, any>) {
   return result
 }
 
-/* The following list is defined in React's core */
+/* 下列列表来源于 React 核心 */
 export const IS_UNITLESS: Record<string, boolean> = {
   animationIterationCount: true,
   boxFlex: true,
@@ -482,7 +461,7 @@ export const IS_UNITLESS: Record<string, boolean> = {
   zIndex: true,
   zoom: true,
 
-  // SVG-related properties
+  // SVG 相关属性
   fillOpacity: true,
   stopOpacity: true,
   strokeDashoffset: true,
@@ -491,10 +470,7 @@ export const IS_UNITLESS: Record<string, boolean> = {
 }
 
 /**
- * Will add px to the end of style values which are Numbers.
- * @param name
- * @param value
- * @returns {*}
+ * 为数值型样式追加 px（除非在无单位白名单内）。
  */
 export function addPx(name: string, value: number | string) {
   if (typeof value === 'number' && !IS_UNITLESS[name]) {
@@ -507,10 +483,7 @@ export function addPx(name: string, value: number | string) {
 export const hyphenateRE = /([a-z\d])([A-Z])/g
 
 /**
- * Hyphenate a camelCase string.
- *
- * @param  str
- * @return
+ * 将 camelCase 字符串连字符化。
  */
 export function hyphenate(str: string) {
   return str.replace(hyphenateRE, '$1-$2').toLowerCase()
@@ -537,19 +510,19 @@ export function findAndRemove(array: any[], property: string, value: any) {
 
 export function useNameHelper(block: string, namespace = 'vgl') {
   /**
-   * @returns `${namespace}-${block}`
+   * 返回 `${namespace}-${block}`
    */
   const b = () => `${namespace}-${block}`
   /**
-   * @returns `${namespace}-${block}__${element}`
+   * 返回 `${namespace}-${block}__${element}`
    */
   const be = (element: string) => `${b()}__${element}`
   /**
-   * @returns `${namespace}-${block}--${modifier}`
+   * 返回 `${namespace}-${block}--${modifier}`
    */
   const bm = (modifier: string | number) => `${b()}--${modifier}`
   /**
-   * @returns `${namespace}-${block}__${element}--${modifier}`
+   * 返回 `${namespace}-${block}__${element}--${modifier}`
    */
   const bem = (element: string, modifier: string | number) => `${b()}__${element}--${modifier}`
 
