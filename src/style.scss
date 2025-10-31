@@ -92,4 +92,45 @@
       }
     }
   }
+
+  &__edge {
+    position: absolute;
+    pointer-events: auto; // 允许单独 hover
+    background-color: transparent;
+    transition: background-color 120ms ease;
+
+    &--top,
+    &--bottom {
+      left: 0;
+      right: 0;
+      height: 2px;
+    }
+    &--left,
+    &--right {
+      top: 0;
+      bottom: 0;
+      width: 2px;
+    }
+
+    &--top {
+      top: 0;
+    }
+    &--bottom {
+      bottom: 0;
+    }
+    &--left {
+      left: 0;
+    }
+    &--right {
+      right: 0;
+    }
+  }
+
+  // 仅高亮被直接 hover 的启用边
+  &__edge.is-enabled:not(.is-active):hover {
+    background-color: rgba(29, 98, 236, 1); // 单个边 hover 颜色
+  }
+  &__edge.is-active {
+    background-color: rgba(29, 98, 236, 1); // 当前正在缩放的边
+  }
 }

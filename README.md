@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/grid-layout-plus" target="_blank">
-    <img src="https://img.shields.io/github/package-json/v/qmhc/grid-layout-plus" alt="npm version"/>
+    <img src="https://img.shields.io/github/package-json/v/HJG20201314/grid-layout-plus" alt="npm version"/>
   </a>
 </p>
 

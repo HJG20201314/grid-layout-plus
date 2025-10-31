@@ -99,6 +99,20 @@ const state = reactive({
   },
   style: {} as Record<string, string>,
   rtl: false,
+  // 新增：当前正在被缩放的边，用于视觉高亮
+  activeResizeEdges: {
+    top: false,
+    right: false,
+    bottom: false,
+    left: false,
+  },
+  // 新增：有效的可缩放边（根据最终 resize 配置计算）
+  enabledResizeEdges: {
+    top: false,
+    right: false,
+    bottom: false,
+    left: false,
+  },
 })
 
 let dragEventSet = false
@@ -342,7 +356,19 @@ const resizerClass = computed(() => {
   return [nh.be('resizer'), renderRtl.value && nh.bem('resizer', 'rtl')].filter(Boolean)
 })
 
-// 监听外部 isDraggable 变更 -> 直接覆盖内部 draggable 状态，后续由 tryMakeDraggable 根据最新值重新配置
+// 智能检测：若用户在 resizeOption 中自定义了 edges（任意形式），则认为使用“边缘/自定义手柄”模式，隐藏默认单一手柄 span
+const userCustomEdges = computed(() => {
+  const opt = props.resizeOption as any
+  if (!opt) return false
+  const edges = opt.edges
+  if (!edges) return false
+  // 任意存在即视为自定义（支持 boolean | object | selector 写法）
+  return true
+})
+// 当未自定义 edges 且组件允许缩放且非 static 时才展示默认手柄
+const showResizer = computed(() => resizableAndNotStatic.value && !userCustomEdges.value)
+
+// 监听外部 isDraggable 变更 -> 直接覆盖内部 draggable 状态，后续由 tryMakeDraggable 根根据新值重新配置
 watch(
   () => props.isDraggable,
   value => {
@@ -520,6 +546,13 @@ function handleResize(event: MouseEvent & { edges: any }) {
   const { x, y } = position
   const newSize = { width: 0, height: 0 }
   let pos
+  // 新增：根据事件携带的 edges 标记当前活动缩放边
+  if (event.edges) {
+    state.activeResizeEdges.top = !!event.edges.top
+    state.activeResizeEdges.right = !!event.edges.right
+    state.activeResizeEdges.bottom = !!event.edges.bottom
+    state.activeResizeEdges.left = !!event.edges.left
+  }
   switch (type) {
     case 'resizestart': {
       tryMakeResizable()
@@ -560,6 +593,11 @@ function handleResize(event: MouseEvent & { edges: any }) {
 
       state.resizing = { width: -1, height: -1 }
       state.isResizing = false
+      // 清理活动边高亮
+      state.activeResizeEdges.top = false
+      state.activeResizeEdges.right = false
+      state.activeResizeEdges.bottom = false
+      state.activeResizeEdges.left = false
       break
     }
   }
@@ -945,6 +983,12 @@ function tryMakeResizable() {
     }
 
     interactObj.value.resizable(opts)
+    // 新增：记录哪些边是启用的，供模板渲染和 hover 高亮
+    const ec: any = opts.edges || {}
+    state.enabledResizeEdges.top = !!ec.top
+    state.enabledResizeEdges.right = !!ec.right
+    state.enabledResizeEdges.bottom = !!ec.bottom
+    state.enabledResizeEdges.left = !!ec.left
     if (!resizeEventSet) {
       resizeEventSet = true
       interactObj.value.on('resizestart resizemove resizeend', event => {
@@ -953,6 +997,10 @@ function tryMakeResizable() {
     }
   } else {
     interactObj.value.resizable({ enabled: false })
+    state.enabledResizeEdges.top = false
+    state.enabledResizeEdges.right = false
+    state.enabledResizeEdges.bottom = false
+    state.enabledResizeEdges.left = false
   }
 }
 </script>
@@ -960,6 +1008,27 @@ function tryMakeResizable() {
 <template>
   <section ref="wrapper" :class="className" :style="state.style">
     <slot></slot>
-    <span v-if="resizableAndNotStatic" :class="resizerClass"></span>
+    <span v-if="showResizer" :class="resizerClass"></span>
+    <!-- 改造：始终渲染边框元素（只在启用边时可 hover），缩放中额外用 is-active 表示当前操作边 -->
+    <div
+      v-if="resizableAndNotStatic"
+      class="vgl-item__edge vgl-item__edge--top"
+      :class="[{ 'is-enabled': state.enabledResizeEdges.top, 'is-active': state.activeResizeEdges.top }]
+    " aria-hidden="true"></div>
+    <div
+      v-if="resizableAndNotStatic"
+      class="vgl-item__edge vgl-item__edge--right"
+      :class="[{ 'is-enabled': state.enabledResizeEdges.right, 'is-active': state.activeResizeEdges.right }]
+    " aria-hidden="true"></div>
+    <div
+      v-if="resizableAndNotStatic"
+      class="vgl-item__edge vgl-item__edge--bottom"
+      :class="[{ 'is-enabled': state.enabledResizeEdges.bottom, 'is-active': state.activeResizeEdges.bottom }]
+    " aria-hidden="true"></div>
+    <div
+      v-if="resizableAndNotStatic"
+      class="vgl-item__edge vgl-item__edge--left"
+      :class="[{ 'is-enabled': state.enabledResizeEdges.left, 'is-active': state.activeResizeEdges.left }]
+    " aria-hidden="true"></div>
   </section>
 </template>

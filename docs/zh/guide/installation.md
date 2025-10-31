@@ -48,7 +48,7 @@ export default defineComponent({
 
 ## 浏览器
 
-在你的页面添加可用于浏览器的软件包 (从 [发布](https://github.com/qmhc/grid-layout-plus/releases) 中下载)。
+在你的页面添加可用于浏览器的软件包 (从 [发布](https://github.com/HJG20201314/grid-layout-plus/releases) 中下载)。
 
 ```html
 <script src="dist/grid-layout-plus.js"></script>

@@ -48,7 +48,7 @@ export default defineComponent({
 
 ## Browser
 
-Include the browser-ready bundle (download from [releases](https://github.com/qmhc/grid-layout-plus/releases)) in your page.
+Include the browser-ready bundle (download from [releases](https://github.com/HJG20201314/grid-layout-plus/releases)) in your page.
 
 ```html
 <script src="dist/grid-layout-plus.js"></script>

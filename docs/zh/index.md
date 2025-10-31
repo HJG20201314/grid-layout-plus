@@ -12,7 +12,7 @@ hero:
       link: /zh/guide/installation
     - theme: alt
       text: 在 GitHub 查看
-      link: https://github.com/qmhc/grid-layout-plus
+      link: https://github.com/HJG20201314/grid-layout-plus
 
 features:
   - title: ✥ 可拖拽部件

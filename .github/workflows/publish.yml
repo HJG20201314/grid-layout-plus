@@ -8,7 +8,7 @@ on:
 jobs:
   publish:
     # prevents this action from running on forks
-    if: github.repository == 'qmhc/grid-layout-plus'
+    if: github.repository == 'HJG20201314/grid-layout-plus'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

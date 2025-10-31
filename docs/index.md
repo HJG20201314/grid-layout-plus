@@ -12,7 +12,7 @@ hero:
       link: /guide/installation
     - theme: alt
       text: View on GitHub
-      link: https://github.com/qmhc/grid-layout-plus
+      link: https://github.com/HJG20201314/grid-layout-plus
 
 features:
   - title: ✥ Draggable widgets

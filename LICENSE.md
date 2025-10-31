@@ -1,6 +1,6 @@
 The MIT License (MIT)
 
-Copyright (c) 2023-present qmhc
+Copyright (c) 2023-present HJG20201314
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
