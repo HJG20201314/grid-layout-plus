@@ -11,7 +11,7 @@ const layout = reactive([
 </script>
 
 <template>
-  <GridLayout v-model:layout="layout" :row-height="30">
+  <GridLayout v-model:layout="layout" :row-height="30" responsive>
     <GridItem
       v-for="item in layout"
       :key="item.i"

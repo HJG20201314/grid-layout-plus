@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 
 // 使用 12 列栅格模拟左右分割：左侧可水平缩放，右侧自动占余下列数。
 const TOTAL_COLS = 12
@@ -8,18 +8,25 @@ const layout = reactive([
   { x: 4, y: 0, w: TOTAL_COLS - 4, h: 8, i: 'right', static: true }, // 右侧自动占余下列
 ])
 
+const isResizing = ref(false)
+
 // 左侧缩放时同步右侧位置与宽度，保持同一行（y=0）避免碰撞下沉
 function onResize(i: string, h: number, w: number) {
   if (i !== 'left') return
-  const left = layout.find(item => item.i === 'left')!
-  const right = layout.find(item => item.i === 'right')!
-  // 使用传入的最新 w 而不是读取 left.w（可能尚未更新）
+  // 首次进入 resize 阶段标记去除过渡
+  if (!isResizing.value) isResizing.value = true
+  // 根据列变化同步右侧（只同步必要属性，不重复写 height/y）
+  const left = layout[0]
+  const right = layout[1]
+  left.w = w
   right.x = w
   right.w = Math.max(TOTAL_COLS - w, 1)
-  // 保持同一行与高度同步
-  left.y = 0
-  right.y = 0
-  right.h = h
+}
+
+function onResized(i: string, h: number, w: number) {
+  if (i !== 'left') return
+  // 结束时恢复过渡
+  isResizing.value = false
 }
 </script>
 
@@ -33,6 +40,7 @@ function onResize(i: string, h: number, w: number) {
     :vertical-compact="false"
     restoreOnDrag
     isBounded
+    :class="{ 'no-transition': isResizing }"
   >
     <GridItem
       v-for="item in layout"
@@ -49,7 +57,7 @@ function onResize(i: string, h: number, w: number) {
       :maxW="TOTAL_COLS - 2"
       :resizeOption="item.i === 'left' ? { edges: { right: true }, margin: 6 } : undefined"
       @resize="onResize"
-      @resized="onResize"
+      @resized="onResized"
     >
       <div class="pane" :class="item.i">
         <strong>{{ item.i === 'left' ? 'Left Pane' : 'Right Pane' }}</strong>
@@ -62,7 +70,8 @@ function onResize(i: string, h: number, w: number) {
 
 <style scoped>
 :deep(.vgl-layout) { background:#f5f5f5; border:1px solid #ccc; }
-:deep(.vgl-item) { background:#fff; border:1px solid #d0d0d0; }
+:deep(.vgl-item) { background:#fff; border:1px solid #d0d0d0; transition:200ms ease; }
+.no-transition :deep(.vgl-item) { transition:none; }
 .pane { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; font-size:14px; }
 .pane.left { background:#eef6ff; }
 .pane.right { background:#fafafa; }

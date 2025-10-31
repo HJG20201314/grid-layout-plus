@@ -57,7 +57,7 @@ export function findOrGenerateResponsiveLayout(
   cols: number,
   verticalCompact: boolean,
 ): Layout {
-  debugger
+  // debugger
   // 如果已存在该断点布局，直接返回其克隆。
   if (layouts[breakpoint]) return cloneLayout(layouts[breakpoint])
   // 查找或生成下一个布局

@@ -5,7 +5,7 @@ import { reactive } from 'vue'
 const TOTAL_COLS = 12
 const layout = reactive([
   // 初始宽度 4 列，x = TOTAL_COLS - w 使得右侧贴边
-  { x: TOTAL_COLS - 4, y: 0, w: 4, h: 8, i: 'drawer' }
+  { x: 0, y: 0, w: 4, h: 8, i: 'drawer' }
 ])
 
 function onResize(i: string, h: number, w: number) {
@@ -14,7 +14,6 @@ function onResize(i: string, h: number, w: number) {
   // 根据新宽度反算 x，保持右侧始终对齐 TOTAL_COLS
   item.w = w
   item.h = h
-  item.x = Math.max(TOTAL_COLS - item.w, 0)
 }
 </script>
 
