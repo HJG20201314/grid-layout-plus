@@ -22,13 +22,22 @@
     "lib": [
       "esnext",
       "dom"
-    ]
+    ],
+    "declaration": true,
+    "declarationMap": false,
+    "emitDeclarationOnly": false,
+    "outDir": "dist",
+    "removeComments": false,
+    "isolatedModules": true
   },
   "include": [
     "dev-server",
     "src"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "dist",
+    "es",
+    "lib"
   ]
 }

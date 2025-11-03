@@ -112,7 +112,7 @@ src/
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { GridLayout, GridItem } from 'grid-layout-plus'
+import { GridLayout, GridItem } from 'grid-layout-plus--hjg'
 
 const layout = ref([
   { x: 0, y: 0, w: 2, h: 2, i: '0' },
@@ -144,7 +144,7 @@ function layoutUpdated(newLayout: any[]) {
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { GridLayout, GridItem } from 'grid-layout-plus'
+import { GridLayout, GridItem } from 'grid-layout-plus--hjg'
 
 const layout = ref([])
 const responsiveLayouts = ref({
