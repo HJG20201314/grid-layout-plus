@@ -1,6 +1,6 @@
 {
   "name": "grid-layout-plus--hjg",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "packageManager": "pnpm@9.14.2",
   "license": "MIT",
@@ -34,6 +34,7 @@
       "import": "./es/index.mjs",
       "require": "./lib/index.cjs"
     },
+    "./style.scss": "./src/style.scss",
     "./es": {
       "types": "./dist/index.d.ts",
       "import": "./es/index.mjs"
@@ -149,5 +150,13 @@
     "patchedDependencies": {
       "conventional-changelog-angular@7.0.0": "patches/conventional-changelog-angular@7.0.0.patch"
     }
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HJG20201314/grid-layout-plus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/HJG20201314/grid-layout-plus/issues"
+  },
+  "homepage": "https://github.com/HJG20201314/grid-layout-plus#readme"
 }
