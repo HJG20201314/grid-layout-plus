@@ -5,3 +5,4 @@ export { default as GridItem } from './components/grid-item.vue'
 
 export type * from './components/types'
 export type * from './helpers/types'
+export * from './utils'
