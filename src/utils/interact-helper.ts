@@ -83,7 +83,15 @@ interface ResizeOptions {
   /** 最大可调整大小次数 */
   max?: number,
   /** 每个元素最大可调整大小次数 */
-  maxPerElement?: number
+  maxPerElement?: number,
+  /** 最小宽度 */
+  minWidth?: number | string,
+  /** 最小高度 */
+  minHeight?: number | string,
+  /** 最大宽度 */
+  maxWidth?: number | string,
+  /** 最大高度 */
+  maxHeight?: number | string
 }
 
 /**
@@ -158,7 +166,7 @@ interface ElementDragResizeCallbacks {
  * @returns 销毁函数
  */
 export function makeElementDraggableResizable(
-  element: HTMLElement,
+  element: HTMLElement | SVGElement,
   options: ElementDragResizeOptions = {},
   callbacks?: ElementDragResizeCallbacks,
 ): () => void {
@@ -177,12 +185,24 @@ export function makeElementDraggableResizable(
   const mergedOptions = { ...defaultOptions, ...options }
   const { draggable, resizable, useCssTransforms, dragOptions, resizeOptions } = mergedOptions
 
-  // 获取或创建数据属性
-  const data = element.dataset
-  data.x = data.x || '0'
-  data.y = data.y || '0'
-  data.width = data.width || element.offsetWidth.toString()
-  data.height = data.height || element.offsetHeight.toString()
+  // 使用通用方式存储数据，兼容所有Element类型
+  const getData = (key: string, defaultValue: string): string => {
+    return element.getAttribute(`data-${key}`) || defaultValue
+  }
+  const setData = (key: string, value: string) => {
+    element.setAttribute(`data-${key}`, value)
+  }
+  
+  // 获取初始尺寸
+  const rect = element.getBoundingClientRect()
+  const width = rect.width || 0
+  const height = rect.height || 0
+  
+  // 初始化数据
+  setData('x', getData('x', '0'))
+  setData('y', getData('y', '0'))
+  setData('width', getData('width', width.toString()))
+  setData('height', getData('height', height.toString()))
 
   // 创建拖拽线元素
   const resizeLines = new Map<string, HTMLElement>()
@@ -197,10 +217,10 @@ export function makeElementDraggableResizable(
 
   // 共享的缓存变量 - 这是修复translate被重置问题的关键
   // 所有功能使用相同的坐标缓存，确保状态一致性
-  let cachedX = parseFloat(data.x)
-  let cachedY = parseFloat(data.y)
-  let cachedWidth = parseFloat(data.width)
-  let cachedHeight = parseFloat(data.height)
+  let cachedX = parseFloat(getData('x', '0'))
+  let cachedY = parseFloat(getData('y', '0'))
+  let cachedWidth = parseFloat(getData('width', width.toString()))
+  let cachedHeight = parseFloat(getData('height', height.toString()))
 
   // 设置拖拽边的hover状态
   const setEdgeActive = (edges: Partial<ElementEdges>) => {
@@ -223,6 +243,8 @@ export function makeElementDraggableResizable(
 
   const createResizeLines = () => {
     const edges = resizeOptions?.edges || {}
+    // 获取margin值，默认为4
+    const margin = resizeOptions?.margin ?? 4
     const lineStyle = {
       position: 'absolute',
       backgroundColor: 'rgba(29, 98, 236, 0)', // 初始透明
@@ -257,7 +279,7 @@ export function makeElementDraggableResizable(
     if (edges.top) {
       const line = document.createElement('div')
       Object.assign(line.style, lineStyle, {
-        top: '-4px',
+        top: `-${margin}px`,
         left: '0',
         width: '100%',
         height: '2px',
@@ -274,7 +296,7 @@ export function makeElementDraggableResizable(
       const line = document.createElement('div')
       Object.assign(line.style, lineStyle, {
         top: '0',
-        right: '-4px',
+        right: `-${margin}px`,
         width: '2px',
         height: '100%',
         cursor: 'col-resize',
@@ -289,7 +311,7 @@ export function makeElementDraggableResizable(
     if (edges.bottom) {
       const line = document.createElement('div')
       Object.assign(line.style, lineStyle, {
-        bottom: '-4px',
+        bottom: `-${margin}px`,
         left: '0',
         width: '100%',
         height: '2px',
@@ -306,7 +328,7 @@ export function makeElementDraggableResizable(
       const line = document.createElement('div')
       Object.assign(line.style, lineStyle, {
         top: '0',
-        left: '-4px',
+        left: `-${margin}px`,
         width: '2px',
         height: '100%',
         cursor: 'col-resize',
@@ -319,7 +341,7 @@ export function makeElementDraggableResizable(
   }
 
   // 设置拖拽线可见性
-  const setResizeLinesVisible = (visible: boolean) => {
+  const setResizeLinesVisible = (_visible: boolean) => {
     resizeLines.forEach(line => {
       // 始终保持pointerEvents为auto以支持hover效果
       line.style.pointerEvents = 'auto'
@@ -367,8 +389,10 @@ export function makeElementDraggableResizable(
       // 延迟更新数据属性，减少DOM操作频率
       if (!event.target._dataUpdateTimer) {
         event.target._dataUpdateTimer = setTimeout(() => {
-          event.target.dataset.x = cachedX.toString()
-          event.target.dataset.y = cachedY.toString()
+          if (event.target instanceof Element) {
+            event.target.setAttribute('data-x', cachedX.toString())
+            event.target.setAttribute('data-y', cachedY.toString())
+          }
           delete event.target._dataUpdateTimer
         }, 50)
       }
@@ -397,8 +421,10 @@ export function makeElementDraggableResizable(
       }
       
       // 立即更新数据属性，确保最终状态正确
-      event.target.dataset.x = cachedX.toString()
-      event.target.dataset.y = cachedY.toString()
+      if (event.target instanceof Element) {
+        event.target.setAttribute('data-x', cachedX.toString())
+        event.target.setAttribute('data-y', cachedY.toString())
+      }
       
       callbacks?.onDrag?.({
         type: 'dragend',
@@ -432,6 +458,61 @@ export function makeElementDraggableResizable(
     if (dragOptions?.maxPerElement !== undefined) draggableConfig.maxPerElement = dragOptions.maxPerElement
     
     interactable.draggable(draggableConfig)
+  }
+
+  // 解析CSS尺寸值为像素值的辅助函数
+  // 添加direction参数来区分是宽度还是高度的计算
+  const parseCssSize = (size: number | string, element: HTMLElement | SVGElement, direction: 'width' | 'height' = 'width'): number => {
+    if (typeof size === 'number') {
+      return size
+    }
+    
+    // 如果已经是像素值格式，直接解析
+    if (size.endsWith('px')) {
+      return parseFloat(size)
+    }
+    
+    // 创建临时元素，使用getComputedStyle来获取实际像素值
+    const temp = document.createElement('div')
+    
+    // 基础样式设置，确保准确计算
+    Object.assign(temp.style, {
+      position: 'absolute',
+      visibility: 'hidden', // 保持尺寸但不可见
+      zIndex: '-1000', // 确保元素在页面内容的后面
+      margin: '0',
+      padding: '0',
+      border: 'none',
+      overflow: 'hidden',
+      boxSizing: 'border-box',
+      width: direction === 'width' ? size : 'auto',
+      height: direction === 'height' ? size : 'auto',
+    })
+    
+    try {
+      // 获取元素的父容器作为参考
+      const parentNode = element.parentNode
+      const container = parentNode instanceof Node ? parentNode : document.body
+      
+      container.appendChild(temp)
+      
+      // 使用getComputedStyle获取计算后的像素值
+      // 确保temp是HTMLElement类型以避免TypeScript类型错误
+      const computedStyle = getComputedStyle(temp as HTMLElement)
+      const sizeProperty = direction === 'width' ? 'width' : 'height'
+      const sizeInPixels = parseFloat(computedStyle[sizeProperty])
+      
+      // 返回有效尺寸或默认值
+      return isNaN(sizeInPixels) || sizeInPixels <= 0 ? 100 : sizeInPixels
+    } catch (e) {
+      // 如果解析失败，返回默认值
+      return 100
+    } finally {
+      // 确保移除临时元素
+      if (temp.parentNode) {
+        temp.parentNode.removeChild(temp)
+      }
+    }
   }
 
   // 配置调整大小功能
@@ -479,21 +560,60 @@ export function makeElementDraggableResizable(
       const deltaWidth = event.deltaRect?.width || 0
       const deltaHeight = event.deltaRect?.height || 0
       
-      // 1. resize上边时：cachedX不变，cachedY减去拖拽变化的高度
+      // 计算原始宽高比（如果需要保持宽高比）
+      let adjustedDeltaWidth = deltaWidth
+      let adjustedDeltaHeight = deltaHeight
+      
+      // 如果启用了保持宽高比
+      if (resizeOptions?.preserveAspectRatio) {
+        // 计算当前宽高比
+        const aspectRatio = cachedWidth / cachedHeight
+        
+        // 确定主要拖拽方向并调整另一维度
+        // 如果是水平边缘（左右），根据宽度变化调整高度
+        if (event.edges?.left || event.edges?.right) {
+          adjustedDeltaHeight = deltaWidth / aspectRatio
+        } else if (event.edges?.top || event.edges?.bottom) {
+          // 如果是垂直边缘（上下），根据高度变化调整宽度
+          adjustedDeltaWidth = deltaHeight * aspectRatio
+        }
+      }
+      
+      // 计算新的宽度和高度，应用最大最小尺寸限制
+      // 使用parseCssSize函数解析复杂的CSS尺寸值
+      const minWidth = parseCssSize(resizeOptions?.minWidth ?? 10, event.target, 'width')
+      const minHeight = parseCssSize(resizeOptions?.minHeight ?? 10, event.target, 'height')
+      const maxWidth = parseCssSize(resizeOptions?.maxWidth ?? Infinity, event.target, 'width')
+      const maxHeight = parseCssSize(resizeOptions?.maxHeight ?? Infinity, event.target, 'height')
+      
+      // 计算目标尺寸
+      let targetWidth = cachedWidth + adjustedDeltaWidth
+      let targetHeight = cachedHeight + adjustedDeltaHeight
+      
+      // 应用最小最大限制
+      targetWidth = Math.max(minWidth, Math.min(maxWidth, targetWidth))
+      targetHeight = Math.max(minHeight, Math.min(maxHeight, targetHeight))
+      
+      // 重新计算实际的delta值
+      adjustedDeltaWidth = targetWidth - cachedWidth
+      adjustedDeltaHeight = targetHeight - cachedHeight
+      
+      // 在应用尺寸限制后，根据实际的delta值调整位置
+      // 1. resize上边时：cachedX不变，cachedY减去实际变化的高度
       if (event.edges?.top) {
-        cachedY -= deltaHeight
+        cachedY -= adjustedDeltaHeight
       }
       // 2. resize右边时：cachedX，cachedY不变
       // 3. resize下边时：cachedX，cachedY不变
-      // 4. resize左边时：cachedY不变，cachedX减去拖拽变化的宽度
+      // 4. resize左边时：cachedY不变，cachedX减去实际变化的宽度
       if (event.edges?.left) {
-        cachedX -= deltaWidth
+        cachedX -= adjustedDeltaWidth
       }
       
-      // 更新尺寸值
-      cachedWidth = Math.max(10, cachedWidth + deltaWidth)
-      cachedHeight = Math.max(10, cachedHeight + deltaHeight)
-
+      // 更新尺寸缓存
+      cachedWidth = targetWidth
+      cachedHeight = targetHeight
+      
       // 更新样式，避免不必要的DOM操作
       event.target.style.width = `${cachedWidth}px`
       event.target.style.height = `${cachedHeight}px`
@@ -507,10 +627,12 @@ export function makeElementDraggableResizable(
       // 延迟更新数据属性，减少DOM操作频率
       if (!event.target._dataUpdateTimer) {
         event.target._dataUpdateTimer = setTimeout(() => {
-          event.target.dataset.x = cachedX.toString()
-          event.target.dataset.y = cachedY.toString()
-          event.target.dataset.width = cachedWidth.toString()
-          event.target.dataset.height = cachedHeight.toString()
+          if (event.target instanceof Element) {
+            event.target.setAttribute('data-x', cachedX.toString())
+            event.target.setAttribute('data-y', cachedY.toString())
+            event.target.setAttribute('data-width', cachedWidth.toString())
+            event.target.setAttribute('data-height', cachedHeight.toString())
+          }
           delete event.target._dataUpdateTimer
         }, 50)
       }
@@ -553,10 +675,12 @@ export function makeElementDraggableResizable(
       resetEdgesActive()
       
       // 立即更新数据属性，确保最终状态正确
-      event.target.dataset.x = cachedX.toString()
-      event.target.dataset.y = cachedY.toString()
-      event.target.dataset.width = cachedWidth.toString()
-      event.target.dataset.height = cachedHeight.toString()
+      if (event.target instanceof Element) {
+        event.target.setAttribute('data-x', cachedX.toString())
+        event.target.setAttribute('data-y', cachedY.toString())
+        event.target.setAttribute('data-width', cachedWidth.toString())
+        event.target.setAttribute('data-height', cachedHeight.toString())
+      }
       
       // 转换 edges 类型
       const normalizedEdges: Partial<ElementEdges> = {
@@ -600,6 +724,10 @@ export function makeElementDraggableResizable(
     if (resizeOptions?.margin !== undefined) resizableConfig.margin = resizeOptions.margin
     if (resizeOptions?.max !== undefined) resizableConfig.max = resizeOptions.max
     if (resizeOptions?.maxPerElement !== undefined) resizableConfig.maxPerElement = resizeOptions.maxPerElement
+    if (resizeOptions?.minWidth !== undefined) resizableConfig.minWidth = parseCssSize(resizeOptions.minWidth, element, 'width')
+    if (resizeOptions?.minHeight !== undefined) resizableConfig.minHeight = parseCssSize(resizeOptions.minHeight, element, 'height')
+    if (resizeOptions?.maxWidth !== undefined) resizableConfig.maxWidth = parseCssSize(resizeOptions.maxWidth, element, 'width')
+    if (resizeOptions?.maxHeight !== undefined) resizableConfig.maxHeight = parseCssSize(resizeOptions.maxHeight, element, 'height')
     
     try {
       interactable.resizable(resizableConfig)
