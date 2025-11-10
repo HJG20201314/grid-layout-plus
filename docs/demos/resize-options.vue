@@ -28,6 +28,14 @@ const resizeOption = reactive({
   margin: 6,
   // 是否保持宽高比
   preserveAspectRatio: false,
+  // 最小宽度
+  minWidth: 100,
+  // 最小高度
+  minHeight: 60,
+  // 最大宽度
+  maxWidth: 300,
+  // 最大高度
+  maxHeight: 200,
 })
 
 // 清理函数数组
@@ -39,6 +47,10 @@ const currentResizeOption = () => {
     edges: { ...resizeOption.enabledEdges },
     margin: resizeOption.margin,
     preserveAspectRatio: resizeOption.preserveAspectRatio,
+    minWidth: resizeOption.minWidth,
+    minHeight: resizeOption.minHeight,
+    maxWidth: resizeOption.maxWidth,
+    maxHeight: resizeOption.maxHeight,
   }
   
   console.log('Current resize options:', options)
@@ -202,6 +214,58 @@ onUnmounted(() => {
           保持宽高比
         </label>
       </div>
+      
+      <div class="control-group">
+        <h4>尺寸限制</h4>
+        
+        <div class="size-control">
+          <label>最小宽度: {{ resizeOption.minWidth }}px</label>
+          <input 
+            v-model.number="resizeOption.minWidth" 
+            type="range" 
+            min="50" 
+            max="200" 
+            step="10"
+            @input="updateOptions"
+          />
+        </div>
+        
+        <div class="size-control">
+          <label>最小高度: {{ resizeOption.minHeight }}px</label>
+          <input 
+            v-model.number="resizeOption.minHeight" 
+            type="range" 
+            min="30" 
+            max="150" 
+            step="10"
+            @input="updateOptions"
+          />
+        </div>
+        
+        <div class="size-control">
+          <label>最大宽度: {{ resizeOption.maxWidth }}px</label>
+          <input 
+            v-model.number="resizeOption.maxWidth" 
+            type="range" 
+            min="200" 
+            max="500" 
+            step="20"
+            @input="updateOptions"
+          />
+        </div>
+        
+        <div class="size-control">
+          <label>最大高度: {{ resizeOption.maxHeight }}px</label>
+          <input 
+            v-model.number="resizeOption.maxHeight" 
+            type="range" 
+            min="100" 
+            max="300" 
+            step="20"
+            @input="updateOptions"
+          />
+        </div>
+      </div>
     </div>
     
     <div class="grid-container">
@@ -263,6 +327,16 @@ onUnmounted(() => {
   margin-top: 5px;
 }
 
+.size-control {
+  margin-bottom: 12px;
+}
+
+.size-control label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+
 .grid-container {
   position: relative;
   flex: 1;
@@ -282,6 +356,7 @@ onUnmounted(() => {
 
 .title-bar {
   text-align: center;
+  cursor: move;
   background-color: aquamarine;
   border-radius: 4px 4px 0 0;
 }
