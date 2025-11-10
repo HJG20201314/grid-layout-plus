@@ -1014,21 +1014,29 @@ function tryMakeResizable() {
       v-if="resizableAndNotStatic"
       class="vgl-item__edge vgl-item__edge--top"
       :class="[{ 'is-enabled': state.enabledResizeEdges.top, 'is-active': state.activeResizeEdges.top }]
-    " aria-hidden="true"></div>
+      "
+      aria-hidden="true"
+    ></div>
     <div
       v-if="resizableAndNotStatic"
       class="vgl-item__edge vgl-item__edge--right"
       :class="[{ 'is-enabled': state.enabledResizeEdges.right, 'is-active': state.activeResizeEdges.right }]
-    " aria-hidden="true"></div>
+      "
+      aria-hidden="true"
+    ></div>
     <div
       v-if="resizableAndNotStatic"
       class="vgl-item__edge vgl-item__edge--bottom"
       :class="[{ 'is-enabled': state.enabledResizeEdges.bottom, 'is-active': state.activeResizeEdges.bottom }]
-    " aria-hidden="true"></div>
+      "
+      aria-hidden="true"
+    ></div>
     <div
       v-if="resizableAndNotStatic"
       class="vgl-item__edge vgl-item__edge--left"
       :class="[{ 'is-enabled': state.enabledResizeEdges.left, 'is-active': state.activeResizeEdges.left }]
-    " aria-hidden="true"></div>
+      "
+      aria-hidden="true"
+    ></div>
   </section>
 </template>

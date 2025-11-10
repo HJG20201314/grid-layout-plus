@@ -6,7 +6,8 @@ import type { DragEvent, Interactable, ResizeEvent } from '@interactjs/types'
 // 扩展Element类型以支持_dataUpdateTimer属性和事件监听器引用
 declare global {
   interface Element {
-    _dataUpdateTimer?: ReturnType<typeof setTimeout>
+    _dataUpdateTimer?: ReturnType<typeof setTimeout>,
+    _resizeRAF?: number
   }
   
   interface HTMLElement {
@@ -16,7 +17,7 @@ declare global {
 }
 
 // 优化常量
-const DEFAULT_THROTTLE_DELAY = 8 // 降低默认节流阈值以提高流畅度
+const DEFAULT_THROTTLE_DELAY = 2 // 极低节流阈值以获得极致流畅度
 
 // Modifier类型定义，从interactjs类型系统中推断
 type Modifier = any
@@ -178,6 +179,7 @@ export function makeElementDraggableResizable(
     dragOptions: {},
     resizeOptions: {
       edges: { top: false, right: false, bottom: false, left: false },
+      margin: 8,
     },
   }
 
@@ -214,6 +216,42 @@ export function makeElementDraggableResizable(
   let isResizing = false
   let isDragging = false
   let activeEdges: Partial<ElementEdges> = {}
+
+  // 检查元素是否为右侧定位
+  const isRightPositioned = () => {
+    if (element instanceof HTMLElement) {
+      const computedStyle = getComputedStyle(element)
+      return computedStyle.right === '0px' || computedStyle.right === '0'
+    }
+    return false
+  }
+
+  // 检查元素是否为左侧定位
+  const isLeftPositioned = () => {
+    if (element instanceof HTMLElement) {
+      const computedStyle = getComputedStyle(element)
+      return computedStyle.left === '0px' || computedStyle.left === '0'
+    }
+    return false
+  }
+
+  // 检查元素是否为顶部定位
+  const isTopPositioned = () => {
+    if (element instanceof HTMLElement) {
+      const computedStyle = getComputedStyle(element)
+      return computedStyle.top === '0px' || computedStyle.top === '0'
+    }
+    return false
+  }
+
+  // 检查元素是否为底部定位
+  const isBottomPositioned = () => {
+    if (element instanceof HTMLElement) {
+      const computedStyle = getComputedStyle(element)
+      return computedStyle.bottom === '0px' || computedStyle.bottom === '0'
+    }
+    return false
+  }
 
   // 共享的缓存变量 - 这是修复translate被重置问题的关键
   // 所有功能使用相同的坐标缓存，确保状态一致性
@@ -519,6 +557,13 @@ export function makeElementDraggableResizable(
   if (resizable && resizeOptions) {
     // 创建拖拽线
     createResizeLines()
+    
+    // 缓存最小/最大尺寸值，避免在每次resize move时重新计算
+    let cachedMinWidth = 10
+    let cachedMinHeight = 10
+    let cachedMaxWidth = Infinity
+    let cachedMaxHeight = Infinity
+    let cachedAspectRatio = cachedWidth / cachedHeight // 缓存宽高比
 
     const handleResizeStart = (event: ResizeEvent) => {
       // 显示拖拽线
@@ -543,19 +588,41 @@ export function makeElementDraggableResizable(
       // 应用活动边的样式
       setEdgeActive(normalizedEdges)
       
-      callbacks?.onResize?.({
-        type: 'resizestart',
-        width: cachedWidth,
-        height: cachedHeight,
-        top: cachedY,
-        left: cachedX,
-        deltaWidth: 0,
-        deltaHeight: 0,
-        edges: normalizedEdges,
-      })
+      // 预计算并缓存最小/最大尺寸值，只在resize开始时计算一次
+      cachedMinWidth = parseCssSize(resizeOptions?.minWidth ?? 10, event.target, 'width')
+      cachedMinHeight = parseCssSize(resizeOptions?.minHeight ?? 10, event.target, 'height')
+      cachedMaxWidth = parseCssSize(resizeOptions?.maxWidth ?? Infinity, event.target, 'width')
+      cachedMaxHeight = parseCssSize(resizeOptions?.maxHeight ?? Infinity, event.target, 'height')
+      cachedAspectRatio = cachedWidth / cachedHeight
+      
+      // 如果有回调，使用requestAnimationFrame异步处理以提高性能
+      if (callbacks?.onResize) {
+        requestAnimationFrame(() => {
+          callbacks.onResize?.({
+            type: 'resizestart',
+            width: cachedWidth,
+            height: cachedHeight,
+            top: cachedY,
+            left: cachedX,
+            deltaWidth: 0,
+            deltaHeight: 0,
+            edges: normalizedEdges,
+          })
+        })
+      }
     }
 
     const handleResizeMove = (event: ResizeEvent) => {
+      // 动态检查元素的定位状态
+      const rightPositioned = isRightPositioned()
+      const leftPositioned = isLeftPositioned()
+      const topPositioned = isTopPositioned()
+      const bottomPositioned = isBottomPositioned()
+      
+      // 对于drawer组件的固定定位场景，确保cached值在模式切换后正确初始化
+      // 检查元素是否有明确的固定定位属性设置
+      const computedStyle = event.target instanceof HTMLElement ? getComputedStyle(event.target) : null
+      
       // 根据用户要求实现不同边缘调整时的位置计算
       const deltaWidth = event.deltaRect?.width || 0
       const deltaHeight = event.deltaRect?.height || 0
@@ -564,78 +631,143 @@ export function makeElementDraggableResizable(
       let adjustedDeltaWidth = deltaWidth
       let adjustedDeltaHeight = deltaHeight
       
-      // 如果启用了保持宽高比
-      if (resizeOptions?.preserveAspectRatio) {
-        // 计算当前宽高比
-        const aspectRatio = cachedWidth / cachedHeight
-        
+      // 如果启用了保持宽高比且不是固定定位元素
+      if (resizeOptions?.preserveAspectRatio && !rightPositioned && !leftPositioned && !topPositioned && !bottomPositioned) {
+        // 使用缓存的宽高比
         // 确定主要拖拽方向并调整另一维度
         // 如果是水平边缘（左右），根据宽度变化调整高度
         if (event.edges?.left || event.edges?.right) {
-          adjustedDeltaHeight = deltaWidth / aspectRatio
+          adjustedDeltaHeight = deltaWidth / cachedAspectRatio
         } else if (event.edges?.top || event.edges?.bottom) {
           // 如果是垂直边缘（上下），根据高度变化调整宽度
-          adjustedDeltaWidth = deltaHeight * aspectRatio
+          adjustedDeltaWidth = deltaHeight * cachedAspectRatio
         }
       }
       
-      // 计算新的宽度和高度，应用最大最小尺寸限制
-      // 使用parseCssSize函数解析复杂的CSS尺寸值
-      const minWidth = parseCssSize(resizeOptions?.minWidth ?? 10, event.target, 'width')
-      const minHeight = parseCssSize(resizeOptions?.minHeight ?? 10, event.target, 'height')
-      const maxWidth = parseCssSize(resizeOptions?.maxWidth ?? Infinity, event.target, 'width')
-      const maxHeight = parseCssSize(resizeOptions?.maxHeight ?? Infinity, event.target, 'height')
-      
-      // 计算目标尺寸
+      // 计算目标尺寸，使用缓存的限制值
       let targetWidth = cachedWidth + adjustedDeltaWidth
       let targetHeight = cachedHeight + adjustedDeltaHeight
       
       // 应用最小最大限制
-      targetWidth = Math.max(minWidth, Math.min(maxWidth, targetWidth))
-      targetHeight = Math.max(minHeight, Math.min(maxHeight, targetHeight))
+      targetWidth = Math.max(cachedMinWidth, Math.min(cachedMaxWidth, targetWidth))
+      targetHeight = Math.max(cachedMinHeight, Math.min(cachedMaxHeight, targetHeight))
       
       // 重新计算实际的delta值
       adjustedDeltaWidth = targetWidth - cachedWidth
       adjustedDeltaHeight = targetHeight - cachedHeight
       
-      // 在应用尺寸限制后，根据实际的delta值调整位置
-      // 1. resize上边时：cachedX不变，cachedY减去实际变化的高度
-      if (event.edges?.top) {
-        cachedY -= adjustedDeltaHeight
+      // 避免不必要的计算和更新
+      if (adjustedDeltaWidth === 0 && adjustedDeltaHeight === 0) {
+        return // 没有变化，直接返回
       }
-      // 2. resize右边时：cachedX，cachedY不变
-      // 3. resize下边时：cachedX，cachedY不变
-      // 4. resize左边时：cachedY不变，cachedX减去实际变化的宽度
-      if (event.edges?.left) {
-        cachedX -= adjustedDeltaWidth
+      
+      // 在应用尺寸限制后，根据实际的delta值调整位置
+      // 对于固定定位元素，我们避免调整cached值，而是直接通过CSS属性控制位置
+      // 这样可以确保固定点不变，避免尺寸变化跳跃
+      
+      // 对于固定定位元素，在模式切换后首次resize时重置cached值
+      // 确保尺寸计算基于实际的DOM状态而不是缓存值
+      if ((rightPositioned || leftPositioned || topPositioned || bottomPositioned) && computedStyle) {
+        // 重新获取元素的实际尺寸，避免模式切换后缓存值不准确
+        const currentRect = event.target.getBoundingClientRect()
+        if (Math.abs(currentRect.width - cachedWidth) > 1 || Math.abs(currentRect.height - cachedHeight) > 1) {
+          cachedWidth = currentRect.width
+          cachedHeight = currentRect.height
+        }
+      }
+      
+      // 只对非固定定位元素调整cached值
+      if (!rightPositioned && !leftPositioned && !topPositioned && !bottomPositioned) {
+        // 1. resize上边时
+        if (event.edges?.top) {
+          cachedY -= adjustedDeltaHeight
+        }
+        // 2. resize右边时
+        if (event.edges?.right) {
+          // 不调整cachedX，因为resize右边不影响位置
+        }
+        // 3. resize下边时
+        if (event.edges?.bottom) {
+          // 不调整cachedY，因为resize下边不影响位置
+        }
+        // 4. resize左边时
+        if (event.edges?.left) {
+          cachedX -= adjustedDeltaWidth
+        }
       }
       
       // 更新尺寸缓存
       cachedWidth = targetWidth
       cachedHeight = targetHeight
       
-      // 更新样式，避免不必要的DOM操作
-      event.target.style.width = `${cachedWidth}px`
-      event.target.style.height = `${cachedHeight}px`
-
-      // 使用transform而不是position
-      if (useCssTransforms) {
-        // 直接应用translate，确保位置正确 - 这是修复translate被重置的关键
+      // 优化DOM操作，支持多种resize方向
+      
+      // 对于所有元素，首先更新宽度
+      if (event.edges?.left || event.edges?.right) {
+        event.target.style.width = `${cachedWidth}px`
+      }
+      
+      // 对于所有元素，首先更新高度
+      if (event.edges?.top || event.edges?.bottom) {
+        event.target.style.height = `${cachedHeight}px`
+      }
+      
+      // 对于固定定位元素，需要额外调整位置以保持固定点不变
+      // 这些调整会在下面的特殊处理部分完成
+      
+      // 针对底部固定元素拖动上边的特殊处理
+      if (event.edges?.top && bottomPositioned) {
+        // 底部固定时，拖动上边需要计算新的top位置
+        // 获取父容器高度
+        const parentRect = event.target.parentElement?.getBoundingClientRect()
+        if (parentRect) {
+          // 对于底部固定元素，top应该是：父容器高度 - 元素高度 - bottom定位值
+          const bottomValue = parseInt(getComputedStyle(event.target).bottom || '0', 10)
+          const newTop = parentRect.height - cachedHeight - bottomValue
+          event.target.style.top = `${newTop}px`
+        }
+      }
+      
+      // 针对右侧固定元素拖动左边的特殊处理
+      if (event.edges?.left && rightPositioned) {
+        // 右侧固定时，拖动左边需要计算新的left位置
+        // 获取父容器宽度
+        const parentRect = event.target.parentElement?.getBoundingClientRect()
+        if (parentRect) {
+          // 对于右侧固定元素，left应该是：父容器宽度 - 元素宽度 - right定位值
+          const rightValue = parseInt(getComputedStyle(event.target).right || '0', 10)
+          const newLeft = parentRect.width - cachedWidth - rightValue
+          event.target.style.left = `${newLeft}px`
+        }
+      }
+      
+      // 针对左侧固定元素拖动右边的特殊处理
+      if (event.edges?.right && leftPositioned) {
+        // 左侧固定时，拖动右边需要确保宽度变化平滑
+        // 获取父容器宽度和当前left值
+        const leftValue = parseInt(getComputedStyle(event.target).left || '0', 10)
+        // 直接设置width属性，由于left已经固定，这会自动保持左侧固定点不变
+        // 为了确保模式切换后的平滑性，显式设置left值
+        event.target.style.left = `${leftValue}px`
+      }
+      
+      // 针对顶部固定元素拖动下边的特殊处理
+      if (event.edges?.bottom && topPositioned) {
+        // 顶部固定时，拖动下边需要确保高度变化平滑
+        // 获取当前top值
+        const topValue = parseInt(getComputedStyle(event.target).top || '0', 10)
+        // 直接设置height属性，由于top已经固定，这会自动保持顶部固定点不变
+        // 为了确保模式切换后的平滑性，显式设置top值
+        event.target.style.top = `${topValue}px`
+      }
+      
+      // 对于非固定定位元素且使用transform的情况，更新位置
+      if (!rightPositioned && !leftPositioned && !topPositioned && !bottomPositioned && useCssTransforms) {
         event.target.style.transform = `translate(${cachedX}px, ${cachedY}px)`
       }
 
-      // 延迟更新数据属性，减少DOM操作频率
-      if (!event.target._dataUpdateTimer) {
-        event.target._dataUpdateTimer = setTimeout(() => {
-          if (event.target instanceof Element) {
-            event.target.setAttribute('data-x', cachedX.toString())
-            event.target.setAttribute('data-y', cachedY.toString())
-            event.target.setAttribute('data-width', cachedWidth.toString())
-            event.target.setAttribute('data-height', cachedHeight.toString())
-          }
-          delete event.target._dataUpdateTimer
-        }, 50)
-      }
+      // 完全移除data属性的更新，这些属性在resize过程中不是必需的，只在结束时更新
+      // 减少DOM操作以提高性能
 
       // 转换 edges 类型
       const normalizedEdges: Partial<ElementEdges> = {
@@ -674,6 +806,8 @@ export function makeElementDraggableResizable(
       // 重置拖拽边状态
       resetEdgesActive()
       
+      // 不再需要清除动画帧，因为resize处理函数不再使用requestAnimationFrame包装
+      
       // 立即更新数据属性，确保最终状态正确
       if (event.target instanceof Element) {
         event.target.setAttribute('data-x', cachedX.toString())
@@ -690,20 +824,27 @@ export function makeElementDraggableResizable(
         left: Boolean(event.edges?.left),
       }
       
-      callbacks?.onResize?.({
-        type: 'resizeend',
-        width: cachedWidth,
-        height: cachedHeight,
-        top: cachedY,
-        left: cachedX,
-        deltaWidth: event.deltaRect?.width || 0,
-        deltaHeight: event.deltaRect?.height || 0,
-        edges: normalizedEdges,
+      // 使用requestAnimationFrame确保回调在DOM更新后执行
+      requestAnimationFrame(() => {
+        callbacks?.onResize?.({
+          type: 'resizeend',
+          width: cachedWidth,
+          height: cachedHeight,
+          top: cachedY,
+          left: cachedX,
+          deltaWidth: event.deltaRect?.width || 0,
+          deltaHeight: event.deltaRect?.height || 0,
+          edges: normalizedEdges,
+        })
       })
     }
 
-    // 创建节流版本的调整大小move处理函数
-    const throttleResizeMove = throttle(handleResizeMove, resizeOptions?.threshold ?? DEFAULT_THROTTLE_DELAY)
+    
+    // 直接使用handleResizeMove，移除多余的动画帧包装，减少函数调用栈
+    const rafResizeMove = handleResizeMove
+    
+    // 完全移除节流，直接处理所有resize事件以获得最佳响应性
+    const throttleResizeMove = rafResizeMove
 
     // 创建调整大小配置
     const resizableConfig: any = {
@@ -736,13 +877,25 @@ export function makeElementDraggableResizable(
     }
   }
 
+  // 初始化样式
+  if (element instanceof HTMLElement) {
+    // 移除任何可能存在的transition效果，避免与resize冲突
+    element.style.transition = 'none'
+  }
+  
   // 初始化transform样式
-  if (useCssTransforms) {
+  if (useCssTransforms && !isRightPositioned() && !isLeftPositioned() && !isTopPositioned() && !isBottomPositioned()) {
+    // 对于非固定定位元素，应用transform
     element.style.transform = `translate(${cachedX}px, ${cachedY}px)`
+  } else if (element instanceof HTMLElement) {
+    // 对于固定定位元素，移除transform以获得最佳性能
+    element.style.transform = ''
   }
 
   // 返回清理函数
   return () => {
+    // 不再需要清除动画帧
+    
     // 移除拖拽线
     resizeLines.forEach(line => {
       // 移除事件监听器

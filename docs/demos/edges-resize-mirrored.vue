@@ -24,15 +24,31 @@ const layout = reactive([
       :w="item.w"
       :h="item.h"
       :i="item.i"
-      :resizeOption="{ edges: { top: true, right: true, bottom: true, left: true }, margin: 6 }"
+      :resize-option="{ edges: { top: true, right: true, bottom: true, left: true }, margin: 6 }"
     >
-      <div class="text">{{ item.i }}</div>
+      <div class="text">
+        {{ item.i }}
+      </div>
     </GridItem>
   </GridLayout>
 </template>
 
 <style scoped>
-.vgl-layout { background:#eee; }
-:deep(.vgl-item:not(.vgl-item--placeholder)) { background:#ccc; border:1px solid #000; }
-.text { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:24px; }
+.vgl-layout {
+    background:#eee;
+  }
+
+:deep(.vgl-item:not(.vgl-item--placeholder)) {
+    background:#ccc;
+    border:1px solid #000;
+  }
+
+.text {
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:24px;
+  }
 </style>

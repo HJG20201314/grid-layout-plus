@@ -20,7 +20,7 @@ const layout = reactive([
       :w="item.w"
       :h="item.h"
       :i="item.i"
-      :resizeOption="{ edges: { top: true, right: true, bottom: true, left: true }, margin: 6 }"
+      :resize-option="{ edges: { top: true, right: true, bottom: true, left: true }, margin: 6 }"
     >
       <div class="text">
         <span>{{ item.i }}</span>
@@ -30,7 +30,21 @@ const layout = reactive([
 </template>
 
 <style scoped>
-.vgl-layout { background-color: #eee; }
-:deep(.vgl-item:not(.vgl-item--placeholder)) { background-color: #ccc; border:1px solid #000; }
-.text { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:24px; }
+.vgl-layout {
+    background-color: #eee;
+  }
+
+:deep(.vgl-item:not(.vgl-item--placeholder)) {
+    background-color: #ccc;
+    border:1px solid #000;
+  }
+
+.text {
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:24px;
+  }
 </style>
