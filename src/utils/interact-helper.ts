@@ -20,12 +20,12 @@ declare global {
 const DEFAULT_THROTTLE_DELAY = 2 // 极低节流阈值以获得极致流畅度
 
 // Modifier类型定义，从interactjs类型系统中推断
-type Modifier = any
+export type Modifier = any
 
 /**
  * 边缘配置接口
  */
-interface ElementEdges {
+export interface ElementEdges {
   /** 是否启用顶部边缘 */
   top?: boolean,
   /** 是否启用右侧边缘 */
@@ -39,7 +39,7 @@ interface ElementEdges {
 /**
  * 拖拽配置选项
  */
-interface DragOptions {
+export interface DragOptions {
   /** 是否启用拖拽功能 */
   enabled?: boolean,
   /** 允许触发拖拽的元素选择器或DOM元素 */
@@ -63,7 +63,7 @@ interface DragOptions {
 /**
  * 调整大小配置选项
  */
-interface ResizeOptions {
+export interface ResizeOptions {
   /** 是否启用调整大小功能 */
   enabled?: boolean,
   /** 可调整大小的边缘配置 */
@@ -98,7 +98,7 @@ interface ResizeOptions {
 /**
  * 拖拽调整大小配置接口
  */
-interface ElementDragResizeOptions {
+export interface ElementDragResizeOptions {
   /** 是否启用拖拽功能 */
   draggable?: boolean,
   /** 是否启用调整大小功能 */
@@ -114,7 +114,7 @@ interface ElementDragResizeOptions {
 /**
  * 拖拽事件回调数据
  */
-interface DragEventCallbackData {
+export interface DragEventCallbackData {
   /** 事件类型 */
   type: 'dragstart' | 'dragmove' | 'dragend',
   /** 元素顶部位置 */
@@ -152,7 +152,7 @@ export interface ResizeEventCallbackData {
 /**
  * 回调函数接口
  */
-interface ElementDragResizeCallbacks {
+export interface ElementDragResizeCallbacks {
   /** 拖拽事件回调函数 */
   onDrag?: (data: DragEventCallbackData) => void,
   /** 调整大小事件回调函数 */
