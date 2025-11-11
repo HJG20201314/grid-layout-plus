@@ -16,6 +16,9 @@ src/
 │   ├── draggable.ts    # 拖拽功能
 │   ├── responsive.ts   # 响应式布局
 │   └── types.ts        # 辅助函数类型定义
+├── utils/              # 工具函数
+│   ├── index.ts        # 工具入口
+│   └── interact-helper.ts # 拖拽调整大小核心实现
 ├── index.ts            # 项目入口
 ├── style.scss          # 样式文件
 └── global.d.ts         # 全局类型声明
@@ -81,6 +84,96 @@ src/
 - `getControlPosition`: 获取控制位置
 - `createCoreData`: 创建拖拽核心数据
 
+## 拖拽调整大小工具 (interact-helper.ts)
+
+**核心功能：**
+- 基于 interactjs 实现的高级拖拽调整大小功能
+- 支持自定义拖拽线样式和交互体验
+- 智能处理不同定位方式（左定位、右定位、上定位、下定位）
+- 支持保持宽高比调整大小
+- 支持 CSS 尺寸值解析（px、百分比、calc 等）
+- 高性能事件处理和节流优化
+- 完整的生命周期事件回调
+
+**主要接口：**
+
+```typescript
+/**
+ * 创建元素拖拽调整大小功能
+ * @param element 目标DOM元素
+ * @param options 配置选项
+ * @param callbacks 回调函数
+ * @returns 销毁函数
+ */
+export function makeElementDraggableResizable(
+  element: HTMLElement | SVGElement,
+  options: ElementDragResizeOptions = {},
+  callbacks?: ElementDragResizeCallbacks,
+): () => void
+```
+
+**主要配置选项：**
+- `draggable`: 是否启用拖拽功能
+- `resizable`: 是否启用调整大小功能
+- `dragOptions`: 拖拽配置（允许触发拖拽的元素、忽略拖拽的元素、修饰器等）
+- `resizeOptions`: 调整大小配置
+  - `edges`: 可调整大小的边缘配置（top、right、bottom、left）
+  - `margin`: 调整大小边缘的外边距
+  - `minWidth`/`minHeight`: 最小宽高限制
+  - `maxWidth`/`maxHeight`: 最大宽高限制（支持 px、% 和 calc 语法）
+  - `preserveAspectRatio`: 是否保持宽高比
+- `useCssTransforms`: 是否使用 CSS transform 进行定位
+
+**事件回调：**
+- `onDrag`: 拖拽事件回调（dragstart、dragmove、dragend）
+- `onResize`: 调整大小事件回调（resizestart、resizemove、resizeend）
+
+**使用示例：**
+
+```typescript
+import { makeElementDraggableResizable } from 'grid-layout-plus--hjg'
+
+// 获取目标元素
+const element = document.getElementById('resizable-element')
+
+if (element) {
+  // 创建拖拽调整大小功能
+  const destroy = makeElementDraggableResizable(
+    element,
+    {
+      draggable: true,
+      resizable: true,
+      resizeOptions: {
+        edges: { top: true, right: true, bottom: true, left: true },
+        minWidth: 100,
+        minHeight: 100,
+        maxWidth: 'calc(100% - 200px)',
+        margin: 8
+      }
+    },
+    {
+      onDrag: (data) => {
+        console.log('拖拽位置:', data.left, data.top)
+      },
+      onResize: (data) => {
+        console.log('调整大小:', data.width, data.height)
+      }
+    }
+  )
+
+  // 清理函数（在组件卸载时调用）
+  // destroy()
+}
+```
+
+**核心特性：**
+1. **高性能实现**：使用节流、防抖和 RequestAnimationFrame 优化交互性能
+2. **智能边界处理**：自动处理不同定位模式下的调整大小行为
+3. **CSS 尺寸值解析**：支持解析各种 CSS 尺寸表达式为像素值
+4. **可视化拖拽线**：提供交互式拖拽线，支持 hover 效果
+5. **完整的状态管理**：缓存位置和尺寸信息，确保状态一致性
+6. **灵活的配置选项**：支持丰富的自定义配置，适应各种场景需求
+
 ## 使用方法
 
 ### 基本用法
@@ -112,12 +205,13 @@ src/
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { GridLayout, GridItem } from 'grid-layout-plus--hjg'
+
+import { GridItem, GridLayout } from 'grid-layout-plus--hjg'
 
 const layout = ref([
   { x: 0, y: 0, w: 2, h: 2, i: '0' },
   { x: 2, y: 0, w: 2, h: 4, i: '1' },
-  { x: 4, y: 0, w: 2, h: 5, i: '2' }
+  { x: 4, y: 0, w: 2, h: 5, i: '2' },
 ])
 
 function layoutUpdated(newLayout: any[]) {
@@ -144,7 +238,8 @@ function layoutUpdated(newLayout: any[]) {
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { GridLayout, GridItem } from 'grid-layout-plus--hjg'
+
+import { GridLayout } from 'grid-layout-plus--hjg'
 
 const layout = ref([])
 const responsiveLayouts = ref({
