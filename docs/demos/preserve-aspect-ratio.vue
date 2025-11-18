@@ -37,7 +37,7 @@ const initItems = () => {
       element.style.position = 'static'
       
       // 初始化调整大小功能
-      const cleanup = makeElementDraggableResizable(
+      const result = makeElementDraggableResizable(
         element,
         {
           draggable: true,
@@ -61,7 +61,7 @@ const initItems = () => {
         },
       )
       
-      cleanupFunctions.value.push(cleanup)
+      cleanupFunctions.value.push(result.cleanup)
     }
   })
 }
@@ -175,7 +175,7 @@ onUnmounted(() => {
 .demo-item-dimensions,
 .demo-item-ratio {
   padding: 4px 8px;
-  margin: 8px 0 0 0;
+  margin: 8px 0 0;
   font-family: monospace;
   background-color: #f5f5f5;
   border-radius: 4px;

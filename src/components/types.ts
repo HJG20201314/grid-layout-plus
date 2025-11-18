@@ -1,4 +1,73 @@
 import type { Breakpoints, Layout, ResponsiveLayout } from '../helpers/types'
+import type {
+  DragEventCallbackData,
+  ElementDragResizeOptions,
+  ResizeEventCallbackData,
+} from '../utils/interact-helper'
+import type { Ref } from 'vue'
+
+/**
+ * DraggableResizableWrapper 组件 Props 类型定义
+ */
+export interface DraggableResizableWrapperProps {
+  draggable?: boolean, // 是否启用拖拽功能
+  resizable?: boolean, // 是否启用调整大小功能
+  useCssTransforms?: boolean, // 是否使用CSS transform进行定位
+  dragOptions?: ElementDragResizeOptions['dragOptions'], // 拖拽配置选项
+  resizeOptions?: ElementDragResizeOptions['resizeOptions'], // 调整大小配置选项
+  initialX?: number, // 初始X坐标
+  initialY?: number, // 初始Y坐标
+  initialWidth?: number, // 初始宽度
+  initialHeight?: number, // 初始高度
+  watchDeep?: boolean, // watch监听器的deep配置
+  watchImmediate?: boolean // watch监听器的immediate配置
+}
+
+/**
+ * DraggableResizableWrapper 组件 Emits 类型定义
+ */
+export interface DraggableResizableWrapperEmits {
+  dragStart: [data: DragEventCallbackData], // 拖拽开始事件
+  dragMove: [data: DragEventCallbackData], // 拖拽移动事件
+  dragEnd: [data: DragEventCallbackData], // 拖拽结束事件
+  resizeStart: [data: ResizeEventCallbackData], // 调整大小开始事件
+  resizeMove: [data: ResizeEventCallbackData], // 调整大小移动事件
+  resizeEnd: [data: ResizeEventCallbackData] // 调整大小结束事件
+}
+
+/**
+ * DraggableResizableWrapper 组件 Slot 作用域参数类型定义
+ */
+export interface DraggableResizableWrapperSlotScope {
+  x: number, // 当前X坐标
+  y: number, // 当前Y坐标
+  width: number, // 当前宽度
+  height: number, // 当前高度
+  isDragging: boolean, // 是否正在拖拽
+  isResizing: boolean, // 是否正在调整大小
+  activeEdges: Record<string, boolean> // 当前激活的边缘
+}
+
+/**
+ * DraggableResizableWrapper 组件暴露的方法类型定义
+ */
+export interface DraggableResizableWrapperExposed {
+  // DOM 元素引用
+  elementRef: Ref<HTMLElement | undefined>,
+  // 当前状态 - 位置和尺寸 (Ref 类型)
+  x: Ref<number>,
+  y: Ref<number>,
+  width: Ref<number>,
+  height: Ref<number>,
+  // 当前状态 - 交互状态 (Ref 类型)
+  isDragging: Ref<boolean>,
+  isResizing: Ref<boolean>,
+  activeEdges: Ref<Record<string, boolean>>,
+  // 更新方法
+  updatePositionAndSize: (x: number, y: number, width: number, height: number) => void,
+  updatePosition: (x: number, y: number) => void,
+  updateSize: (width: number, height: number) => void
+}
 
 export interface GridLayoutProps {
   autoSize?: boolean, // 是否自动根据内容计算容器高度

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 
-import { makeElementDraggableResizable } from '../../src/utils/interact-helper'
+import { type DraggableResizableResult, makeElementDraggableResizable } from '../../src/utils/interact-helper'
 
 // 对话框位置和尺寸状态
 const dialogState = ref({
@@ -13,7 +13,7 @@ const dialogState = ref({
 
 // 引用对话框元素
 const dialogRef = ref<HTMLElement>()
-let destroyDragResize: (() => void) | null = null
+let draggableResizableResult: DraggableResizableResult | null = null
 
 // 初始化拖拽和调整大小功能
 onMounted(() => {
@@ -26,7 +26,7 @@ onMounted(() => {
     dialogRef.value.style.height = `${dialogState.value.height}px`
     
     // 使用interact-helper设置拖拽和调整大小
-    destroyDragResize = makeElementDraggableResizable(
+    draggableResizableResult = makeElementDraggableResizable(
       dialogRef.value,
       {
         draggable: true,
@@ -47,6 +47,11 @@ onMounted(() => {
         onDrag: (data) => {
           dialogState.value.x = data.left
           dialogState.value.y = data.top
+          // 同步更新DOM位置
+          if (dialogRef.value) {
+            dialogRef.value.style.left = `${data.left}px`
+            dialogRef.value.style.top = `${data.top}px`
+          }
         },
         onResize: (data) => {
           dialogState.value.width = data.width
@@ -61,8 +66,8 @@ onMounted(() => {
 
 // 清理资源
 onUnmounted(() => {
-  if (destroyDragResize) {
-    destroyDragResize()
+  if (draggableResizableResult) {
+    draggableResizableResult.cleanup()
   }
 })
 
@@ -70,20 +75,16 @@ onUnmounted(() => {
 function expand() {
   dialogState.value.width = Math.min(dialogState.value.width + 40, 600)
   dialogState.value.height = Math.min(dialogState.value.height + 40, 480)
-  updateDialogSize()
+  if (draggableResizableResult) {
+    draggableResizableResult.updateSize(dialogState.value.width, dialogState.value.height)
+  }
 }
 
 function shrink() {
   dialogState.value.width = Math.max(dialogState.value.width - 40, 120)
   dialogState.value.height = Math.max(dialogState.value.height - 40, 120)
-  updateDialogSize()
-}
-
-// 更新对话框尺寸
-function updateDialogSize() {
-  if (dialogRef.value) {
-    dialogRef.value.style.width = `${dialogState.value.width}px`
-    dialogRef.value.style.height = `${dialogState.value.height}px`
+  if (draggableResizableResult) {
+    draggableResizableResult.updateSize(dialogState.value.width, dialogState.value.height)
   }
 }
 </script>

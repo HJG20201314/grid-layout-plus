@@ -26,7 +26,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
-import { makeElementDraggableResizable } from '../../src/utils/interact-helper'
+import { type DraggableResizableResult, makeElementDraggableResizable } from '../../src/utils/interact-helper'
 
 // 分割面板状态
 const splitState = ref({
@@ -40,7 +40,7 @@ const leftPaneRef = ref<HTMLElement>()
 const rightPaneRef = ref<HTMLElement>()
 
 // 存储销毁函数
-let destroyResize: (() => void) | null = null
+let destroyResize: DraggableResizableResult | null = null
 
 // 计算左侧面板样式
 const leftPaneStyle = computed(() => ({
@@ -75,7 +75,7 @@ const handleResize = () => {
     
     // 如果窗口大小变化导致最大宽度改变，需要重新创建resize功能
     if (destroyResize) {
-      destroyResize()
+      destroyResize.cleanup()
       
       if (leftPaneRef.value) {
         destroyResize = makeElementDraggableResizable(
@@ -147,7 +147,7 @@ onUnmounted(() => {
   
   // 销毁拖拽功能
   if (destroyResize) {
-    destroyResize()
+    destroyResize.cleanup()
   }
 })
 </script>

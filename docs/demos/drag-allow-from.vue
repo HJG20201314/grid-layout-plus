@@ -76,7 +76,7 @@ makeElementDraggableResizable(element, {
 onMounted(() => {
   // 初始化拖拽功能
   if (draggableElement1.value) {
-    const cleanup1 = makeElementDraggableResizable(draggableElement1.value, {
+    const result1 = makeElementDraggableResizable(draggableElement1.value, {
       dragOptions: {
         allowFrom: '.title-bar', // 只允许通过标题栏拖拽
         threshold: 8, // 降低节流阈值以提高拖拽流畅度
@@ -88,11 +88,11 @@ onMounted(() => {
         }
       },
     })
-    cleanupFunctions.push(cleanup1)
+    cleanupFunctions.push(result1.cleanup)
   }
   
   if (draggableElement2.value) {
-    const cleanup2 = makeElementDraggableResizable(draggableElement2.value, {
+    const result2 = makeElementDraggableResizable(draggableElement2.value, {
       dragOptions: {
         allowFrom: '.icon-handle', // 只允许通过图标拖拽
         threshold: 8, // 降低节流阈值以提高拖拽流畅度
@@ -104,7 +104,7 @@ onMounted(() => {
         }
       },
     })
-    cleanupFunctions.push(cleanup2)
+    cleanupFunctions.push(result2.cleanup)
   }
 })
 

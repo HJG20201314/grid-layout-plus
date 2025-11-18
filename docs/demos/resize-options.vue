@@ -78,7 +78,6 @@ const onDragEnd = (item: any, event: any) => {
 
 // 初始化拖拽和调整大小功能
 const initDraggableResizable = () => {
-  console.log('Initializing draggable resizable elements...')
   
   // 先清理之前的实例
   cleanupFunctions.value.forEach(cleanup => cleanup())
@@ -117,11 +116,11 @@ const initDraggableResizable = () => {
           draggable: true,
           resizable: true,
           resizeOptions: currentResizeOption(),
+          x: item.x,
+          y: item.y,
         }
         
-        console.log(`Applying options to item ${item.i}:`, options)
-        
-        const cleanup = makeElementDraggableResizable(
+        const result = makeElementDraggableResizable(
           element,
           options,
           {
@@ -141,8 +140,7 @@ const initDraggableResizable = () => {
           },
         )
         
-        cleanupFunctions.value.push(cleanup)
-        console.log(`Initialized item ${item.i} successfully`)
+        cleanupFunctions.value.push(result.cleanup)
       } catch (error) {
         console.error(`Failed to initialize item ${item.i}:`, error)
       }

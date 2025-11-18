@@ -12,6 +12,9 @@
   </a>
 </p>
 
+郑重声明：本项目是 [Vue Grid Layout](https://github.com/jbaysolutions/vue-grid-layout) 的 Vue 3 版本，仅用于学习和研究 purposes。
+基于  qmhc/grid-layout-plus 项目，进行 fork 继承二开。
+
 ## What is Grid Layout Plus?
 
 Grid Layout Plus comes from [Vue Grid Layout](https://github.com/jbaysolutions/vue-grid-layout) and is migrated to Vue 3.

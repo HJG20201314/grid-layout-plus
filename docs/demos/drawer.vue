@@ -60,7 +60,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
-import { makeElementDraggableResizable } from '../../src/utils/interact-helper'
+import { type DraggableResizableResult, makeElementDraggableResizable } from '../../src/utils/interact-helper'
 
 // 抽屉状态
 const drawerState = ref({
@@ -73,7 +73,7 @@ const currentMode = ref('right-fixed')
 
 // 抽屉引用
 const drawerRef = ref<HTMLElement>()
-let destroyDragResize: (() => void) | null = null
+let draggableResizableResult: DraggableResizableResult | null = null
 
 // 判断是否为水平方向的模式
 const isHorizontalMode = computed(() => {
@@ -136,9 +136,9 @@ const handleModeChange = () => {
   }
   
   // 2. 清理现有的拖拽调整大小功能
-  if (destroyDragResize) {
-    destroyDragResize()
-    destroyDragResize = null
+  if (draggableResizableResult) {
+    draggableResizableResult.cleanup()
+    draggableResizableResult = null
   }
   
   // 3. 重新初始化拖拽调整大小功能
@@ -225,7 +225,7 @@ const initResizeFunctionality = () => {
   drawerRef.value.style.right = resizeConfig.position.right || 'auto'
   
   // 初始化拖拽调整大小功能
-  destroyDragResize = makeElementDraggableResizable(
+  draggableResizableResult = makeElementDraggableResizable(
     drawerRef.value,
     {
       draggable: false,
@@ -261,8 +261,8 @@ onMounted(() => {
 
 // 组件卸载时清理
 onUnmounted(() => {
-  if (destroyDragResize) {
-    destroyDragResize()
+  if (draggableResizableResult) {
+    draggableResizableResult.cleanup()
   }
 })
 </script>
@@ -282,10 +282,10 @@ onUnmounted(() => {
   top: 20px;
   left: 20px;
   z-index: 200;
-  background: white;
   padding: 10px 15px;
+  background: white;
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 15%);
 }
 
 .scene-selector label {
@@ -310,16 +310,13 @@ onUnmounted(() => {
 .scene-selector select:focus {
   border-color: #1890ff;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 20%);
 }
 
 .drawer-backdrop {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  background-color: rgba(0, 0, 0, 0.3);
+  inset: 0;
+  background-color: rgba(0, 0, 0, 30%);
 }
 
 .drawer {
@@ -329,7 +326,7 @@ onUnmounted(() => {
   flex-direction: column;
   background: #fff;
   border: 1px solid #ccc;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 15%);
   transition: width 0.3s ease, height 0.3s ease;
 }
 
@@ -355,7 +352,7 @@ onUnmounted(() => {
   color: #fff;
   cursor: pointer;
   background: none;
-  border-style: none;
+  border: 0;
 }
 
 .close-btn:hover {
