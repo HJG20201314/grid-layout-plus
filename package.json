@@ -72,7 +72,7 @@
     "lib",
     "src",
     "CHANGELOG.md",
-    "types.d.ts"
+    "package.json"
   ],
   "keywords": [
     "flex",
