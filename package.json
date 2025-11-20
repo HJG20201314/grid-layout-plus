@@ -27,14 +27,14 @@
     "test:cover": "vitest run --coverage",
     "test:dev": "vitest dev"
   },
-  "main": "lib/index.js",
+  "main": "lib/index.cjs",
   "module": "es/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./es/index.mjs",
-      "require": "./lib/index.js"
+      "require": "./lib/index.cjs"
     },
     "./style.scss": "./src/style.scss",
     "./es": {

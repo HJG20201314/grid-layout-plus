@@ -46,7 +46,7 @@ export default defineConfig({
           preserveModules: true,
           preserveModulesRoot: resolve(__dirname, 'src'),
           dir: 'lib',
-          entryFileNames: '[name].js',
+          entryFileNames: '[name].cjs',
         },
         {
           format: 'es',
