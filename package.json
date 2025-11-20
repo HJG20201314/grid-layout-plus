@@ -75,6 +75,7 @@
     "lib",
     "src",
     "scripts",
+    "patches",
     "CHANGELOG.md",
     "types.d.ts",
     "vite.config.ts",
