@@ -153,9 +153,7 @@
     },
     "patchedDependencies": {
       "conventional-changelog-angular@7.0.0": "patches/conventional-changelog-angular@7.0.0.patch"
-    },
-    "neverBuiltDependencies": [],
-    "onlyBuiltDependencies": []
+    }
   },
   "repository": {
     "type": "git",
