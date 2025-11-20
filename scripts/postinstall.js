@@ -13,20 +13,48 @@ const __dirname = path.dirname(__filename)
 const argv = minimist(process.argv.slice(2))
 const ignoreScripts = argv['ignore-scripts'] !== false
 
-// 检查是否在 node_modules 中被安装（即作为依赖包）
+// 检查是否从GitHub安装（通过检查是否存在.git目录或package.json中的repository字段）
+function isInstalledFromGitHub() {
+  // 检查是否存在.git目录（表示是从源码安装）
+  const gitDir = path.join(process.cwd(), '.git')
+  if (fs.existsSync(gitDir)) {
+    return true
+  }
+  
+  // 检查package.json中是否有repository字段且是GitHub仓库
+  try {
+    const packageJsonPath = path.join(process.cwd(), 'package.json')
+    if (fs.existsSync(packageJsonPath)) {
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
+      return packageJson.repository && packageJson.repository.url && packageJson.repository.url.includes('github.com')
+    }
+  } catch (error) {
+    // 如果读取失败，继续其他检查
+  }
+  
+  return false
+}
+
+// 检查是否作为依赖包安装
 function isInstalledAsDependency() {
   const currentDir = process.cwd()
   return currentDir.includes('node_modules')
 }
 
-// 检查必要的构建产物是否存在
+// 检查必要的构建产物是否存在（特别是lib和es目录）
 function hasBuildArtifacts() {
   const requiredPaths = [
     'dist/index.d.ts',
     'dist/grid-layout-plus.mjs',
     'dist/grid-layout-plus.cjs',
     'es/index.mjs',
+    'es/components/grid-layout.vue.mjs',
+    'es/components/grid-item.vue.mjs',
+    'es/components/DraggableResizableWrapper.vue.mjs',
     'lib/index.js',
+    'lib/components/grid-layout.vue.js',
+    'lib/components/grid-item.vue.js',
+    'lib/components/DraggableResizableWrapper.vue.js',
   ]
   
   return requiredPaths.every(filePath => {
@@ -45,9 +73,16 @@ function runBuild() {
     const installCmd = ignoreScripts ? 'pnpm install --ignore-scripts=false' : 'pnpm install'
     execSync(installCmd, { stdio: 'inherit' })
     
-    // 然后执行构建
-    console.log('🏗️  正在执行构建...')
-    execSync('pnpm run build', { stdio: 'inherit' })
+    // 然后执行构建 - 确保构建所有格式
+    console.log('🏗️  正在执行完整构建...')
+    
+    // 构建 ES 模块格式（包含 lib 和 es 目录）
+    console.log('🏗️  正在构建 ES 模块和 CommonJS 格式...')
+    execSync('pnpm exec vite build --config vite.config.ts', { stdio: 'inherit' })
+    
+    // 构建完整打包格式（包含 dist 目录）
+    console.log('🏗️  正在构建完整打包格式...')
+    execSync('pnpm exec vite build --config vite.full.config.ts', { stdio: 'inherit' })
     
     console.log('✅ 构建完成！')
   } catch (error) {
@@ -58,9 +93,16 @@ function runBuild() {
 
 // 主函数
 function main() {
-  // 只有在作为依赖包安装且缺少构建产物时才构建
-  if (isInstalledAsDependency() && !hasBuildArtifacts()) {
-    console.log('📦 grid-layout-plus 检测到从 GitHub 安装，正在准备构建...')
+  // 如果从GitHub安装，总是确保构建产物完整
+  if (isInstalledFromGitHub()) {
+    if (!hasBuildArtifacts()) {
+      console.log('📦 grid-layout-plus 检测到从 GitHub 安装，缺少构建产物，正在准备构建...')
+      runBuild()
+    } else {
+      console.log('✅ grid-layout-plus 从 GitHub 安装，构建产物已完整存在。')
+    }
+  } else if (isInstalledAsDependency() && !hasBuildArtifacts()) {
+    console.log('📦 grid-layout-plus 检测到从 npm 安装但缺少构建产物，正在准备构建...')
     runBuild()
   } else {
     console.log('✅ grid-layout-plus 构建产物已存在，跳过构建。')
@@ -71,4 +113,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main()
 }
 
-export { main, isInstalledAsDependency, hasBuildArtifacts, runBuild }
+export { main, isInstalledFromGitHub, isInstalledAsDependency, hasBuildArtifacts, runBuild }
