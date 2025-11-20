@@ -4,9 +4,14 @@ import fs from 'fs'
 import path from 'path'
 import { execSync } from 'child_process'
 import { fileURLToPath } from 'url'
+import minimist from 'minimist'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+// 解析命令行参数
+const argv = minimist(process.argv.slice(2))
+const ignoreScripts = argv['ignore-scripts'] !== false
 
 // 检查是否在 node_modules 中被安装（即作为依赖包）
 function isInstalledAsDependency() {
@@ -37,7 +42,8 @@ function runBuild() {
   try {
     // 首先安装依赖
     console.log('📦 正在安装依赖...')
-    execSync('pnpm install', { stdio: 'inherit' })
+    const installCmd = ignoreScripts ? 'pnpm install --ignore-scripts=false' : 'pnpm install'
+    execSync(installCmd, { stdio: 'inherit' })
     
     // 然后执行构建
     console.log('🏗️  正在执行构建...')

@@ -1,6 +1,6 @@
 {
   "name": "grid-layout-plus",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "type": "module",
   "packageManager": "pnpm@9.14.2",
   "license": "MIT",
@@ -16,7 +16,7 @@
     "precommit": "lint-staged -c ./.husky/.lintstagedrc -q",
     "prepare": "husky && pnpm run prepare:build",
     "prepare:build": "node -e \"const fs=require('fs'); if(!fs.existsSync('dist')){process.exit(1)}\" || pnpm run build",
-    "postinstall": "node scripts/postinstall.js",
+    "postinstall": "tsx scripts/postinstall.js",
     "prepublishOnly": "pinst --disable",
     "prettier": "prettier --write \"{src,dev-server,docs}/**/*.{ts,js,json,css,pcss,scss,vue,html,md}\"",
     "prettier:scripts": "prettier --write \"scripts/**/*.{ts,js,json}\"",
@@ -74,6 +74,7 @@
     "es",
     "lib",
     "src",
+    "scripts",
     "CHANGELOG.md",
     "types.d.ts"
   ],
@@ -92,7 +93,8 @@
   "dependencies": {
     "@vexip-ui/hooks": "^2.8.0",
     "@vexip-ui/utils": "^2.16.1",
-    "interactjs": "^1.10.27"
+    "interactjs": "^1.10.27",
+    "minimist": "^1.2.8"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
@@ -151,7 +153,9 @@
     },
     "patchedDependencies": {
       "conventional-changelog-angular@7.0.0": "patches/conventional-changelog-angular@7.0.0.patch"
-    }
+    },
+    "neverBuiltDependencies": [],
+    "onlyBuiltDependencies": []
   },
   "repository": {
     "type": "git",
