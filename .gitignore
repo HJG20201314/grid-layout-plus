@@ -5,8 +5,9 @@ temp
 .dev
 .yarn
 coverage
-/es
-/lib
+# /es
+# /lib
+# /dist
 cache
 
 yarn.lock

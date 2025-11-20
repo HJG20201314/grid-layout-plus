@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "pnpm@9.14.2",
   "license": "MIT",
-  "author": "HJG20201314",
+  "author": "qmhc",
   "scripts": {
     "build": "tsx scripts/build.ts",
     "build:docs": "pnpm -C docs build",
@@ -14,9 +14,7 @@
     "lint": "eslint --cache \"**/*.{js,cjs,mjs,ts,tsx,vue}\"",
     "lint:style": "stylelint --cache \"**/*.{vue,scss}\"",
     "precommit": "lint-staged -c ./.husky/.lintstagedrc -q",
-    "prepare": "husky && pnpm run prepare:build",
-    "prepare:build": "node -e \"const fs=require('fs'); if(!fs.existsSync('dist')){process.exit(1)}\" || pnpm run build",
-    "postinstall": "tsx scripts/postinstall.js",
+    "prepare": "husky",
     "prepublishOnly": "pinst --disable",
     "prettier": "prettier --write \"{src,dev-server,docs}/**/*.{ts,js,json,css,pcss,scss,vue,html,md}\"",
     "prettier:scripts": "prettier --write \"scripts/**/*.{ts,js,json}\"",
@@ -27,23 +25,44 @@
     "test:cover": "vitest run --coverage",
     "test:dev": "vitest dev"
   },
-  "main": "es/index.js",
+  "main": "lib/index.cjs",
   "module": "es/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./es/index.mjs",
-      "require": "./es/index.js"
+      "require": "./lib/index.cjs"
     },
-    "./style.scss": "./src/style.scss",
     "./es": {
       "types": "./dist/index.d.ts",
       "import": "./es/index.mjs"
     },
     "./lib": {
       "types": "./dist/index.d.ts",
-      "require": "./es/index.js"
+      "require": "./lib/index.cjs"
+    },
+    "./es/*.mjs": {
+      "types": "./dist/*.d.ts",
+      "import": "./es/*.mjs"
+    },
+    "./es/*": {
+      "types": [
+        "./dist/*.d.ts",
+        "./dist/*/index.d.ts"
+      ],
+      "import": "./es/*.mjs"
+    },
+    "./lib/*.cjs": {
+      "types": "./dist/*.d.ts",
+      "require": "./lib/*.cjs"
+    },
+    "./lib/*": {
+      "types": [
+        "./dist/*.d.ts",
+        "./dist/*/index.d.ts"
+      ],
+      "require": "./lib/*.cjs"
     },
     "./package.json": "./package.json"
   },
@@ -52,15 +71,8 @@
     "es",
     "lib",
     "src",
-    "scripts",
-    "patches",
     "CHANGELOG.md",
-    "types.d.ts",
-    "vite.config.ts",
-    "vite.full.config.ts",
-    "tsconfig.json",
-    "package.json",
-    "pnpm-lock.yaml"
+    "types.d.ts"
   ],
   "keywords": [
     "flex",
@@ -77,8 +89,7 @@
   "dependencies": {
     "@vexip-ui/hooks": "^2.8.0",
     "@vexip-ui/utils": "^2.16.1",
-    "interactjs": "^1.10.27",
-    "minimist": "^1.2.8"
+    "interactjs": "^1.10.27"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
@@ -138,13 +149,5 @@
     "patchedDependencies": {
       "conventional-changelog-angular@7.0.0": "patches/conventional-changelog-angular@7.0.0.patch"
     }
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/HJG20201314/grid-layout-plus.git"
-  },
-  "bugs": {
-    "url": "https://github.com/HJG20201314/grid-layout-plus/issues"
-  },
-  "homepage": "https://github.com/HJG20201314/grid-layout-plus#readme"
+  }
 }
