@@ -27,6 +27,38 @@ npm install git+https://github.com/HJG20201314/grid-layout-plus.git#v1.0.6
 
 > **注意**: 请将 `HJG20201314` 替换为实际的 GitHub 用户名或组织名。例如：`https://github.com/hjg-grid/grid-layout-plus.git`
 
+### ⚠️ 重要提示
+
+从 GitHub 仓库安装时，由于构建产物（`dist`、`es`、`lib` 目录）默认不会包含在仓库中，您需要手动构建：
+
+```bash
+# 进入包目录
+cd node_modules/grid-layout-plus
+
+# 安装依赖
+pnpm install
+
+# 构建项目
+pnpm run build
+```
+
+或者使用自动构建（推荐）：
+
+```bash
+# 包会自动检测并构建（需要等待一段时间）
+```
+
+**🔧 如果遇到安装问题（得到旧版本），请清除 pnpm 缓存：**
+
+```bash
+# 清除 pnpm 缓存
+pnpm store prune
+
+# 重新安装
+pnpm remove grid-layout-plus
+pnpm add git+https://github.com/HJG20201314/grid-layout-plus.git
+```
+
 ### 在 package.json 中使用
 
 ```json
