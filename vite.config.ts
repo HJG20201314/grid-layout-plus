@@ -35,27 +35,17 @@ export default defineConfig({
     sourcemap: true,
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
-      formats: ['es'],
+      name: 'GridLayoutPlus',
+      fileName: (format) => `index.${format === 'es' ? 'mjs' : 'js'}`,
+      formats: ['es', 'cjs'],
     },
     rollupOptions: {
-      input: [resolve(__dirname, 'src/index.ts')],
       external,
-      output: [
-        {
-          format: 'cjs',
-          preserveModules: true,
-          preserveModulesRoot: resolve(__dirname, 'src'),
-          dir: 'lib',
-          entryFileNames: '[name].cjs',
+      output: {
+        globals: {
+          vue: 'Vue',
         },
-        {
-          format: 'es',
-          preserveModules: true,
-          preserveModulesRoot: resolve(__dirname, 'src'),
-          dir: 'es',
-          entryFileNames: '[name].mjs',
-        },
-      ],
+      },
     },
     commonjsOptions: {
       sourceMap: false,

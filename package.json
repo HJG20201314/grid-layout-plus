@@ -27,14 +27,14 @@
     "test:cover": "vitest run --coverage",
     "test:dev": "vitest dev"
   },
-  "main": "lib/index.cjs",
+  "main": "es/index.js",
   "module": "es/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./es/index.mjs",
-      "require": "./lib/index.cjs"
+      "require": "./es/index.js"
     },
     "./style.scss": "./src/style.scss",
     "./es": {
@@ -43,29 +43,7 @@
     },
     "./lib": {
       "types": "./dist/index.d.ts",
-      "require": "./lib/index.js"
-    },
-    "./es/*.mjs": {
-      "types": "./dist/*.d.ts",
-      "import": "./es/*.mjs"
-    },
-    "./es/*": {
-      "types": [
-        "./dist/*.d.ts",
-        "./dist/*/index.d.ts"
-      ],
-      "import": "./es/*.mjs"
-    },
-    "./lib/*.js": {
-      "types": "./dist/*.d.ts",
-      "require": "./lib/*.js"
-    },
-    "./lib/*": {
-      "types": [
-        "./dist/*.d.ts",
-        "./dist/*/index.d.ts"
-      ],
-      "require": "./lib/*.js"
+      "require": "./es/index.js"
     },
     "./package.json": "./package.json"
   },
