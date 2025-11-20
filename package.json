@@ -76,7 +76,12 @@
     "src",
     "scripts",
     "CHANGELOG.md",
-    "types.d.ts"
+    "types.d.ts",
+    "vite.config.ts",
+    "vite.full.config.ts",
+    "tsconfig.json",
+    "package.json",
+    "pnpm-lock.yaml"
   ],
   "keywords": [
     "flex",
