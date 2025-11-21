@@ -25,9 +25,9 @@ declare const __VLS_component: import('vue').DefineComponent<DraggableResizableW
     y: import('vue').Ref<number>;
     width: import('vue').Ref<number>;
     height: import('vue').Ref<number>;
-    isDragging: import('vue').Ref<boolean>;
-    isResizing: import('vue').Ref<boolean>;
-    activeEdges: import('vue').Ref<Record<string, boolean>>;
+    isDragging: boolean;
+    isResizing: boolean;
+    activeEdges: Record<string, boolean>;
     updatePositionAndSize: (x: number | string, y: number | string, width: number | string, height: number | string) => void;
     updatePosition: (x: number | string, y: number | string) => void;
     updateSize: (width: number | string, height: number | string) => void;
