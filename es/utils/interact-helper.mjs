@@ -1,7 +1,8 @@
-import Wt from "interactjs";
-import { throttle as _t } from "@vexip-ui/utils";
-const jt = 2;
-function Yt(i, Ct = {}, a) {
+import _t from "interactjs";
+import { throttle as Ft } from "@vexip-ui/utils";
+import { parsePositionValue as U, parseCssSize as y, isCssUnitValue as Y } from "./css-units.mjs";
+const It = 2;
+function Xt(o, Lt = {}, g) {
   const T = { ...{
     draggable: !0,
     resizable: !0,
@@ -15,339 +16,308 @@ function Yt(i, Ct = {}, a) {
     y: 0,
     width: 0,
     height: 0
-  }, ...Ct }, { draggable: z, resizable: G, useCssTransforms: _, dragOptions: g, resizeOptions: t } = T, j = (e, s) => i.getAttribute(`data-${e}`) || s, q = (e, s) => {
-    i.setAttribute(`data-${e}`, s.toString());
-  }, Z = i.getBoundingClientRect(), v = T.width || Z.width || 0, O = T.height || Z.height || 0;
-  q("x", T.x || 0), q("y", T.y || 0), q("width", v.toString()), q("height", O.toString());
-  const Lt = j("x", "0"), wt = j("y", "0"), Mt = j("width", v.toString()), Pt = j("height", O.toString()), B = (e) => typeof e == "string" && /(px|%|vw|vh|rem|em|calc\()/i.test(e), N = (e, s, p) => typeof e == "number" ? e : B(e) ? x(e, s, p === "x" ? "width" : "height") : parseFloat(e) || 0;
-  let f = N(Lt, i, "x"), h = N(wt, i, "y"), l = x(Mt, i, "width"), m = x(Pt, i, "height");
-  const R = /* @__PURE__ */ new Map();
+  }, ...Lt }, { draggable: X, resizable: G, useCssTransforms: _, dragOptions: a, resizeOptions: t } = T, F = (i, s) => o.getAttribute(`data-${i}`) || s, I = (i, s) => {
+    o.setAttribute(`data-${i}`, s.toString());
+  }, Q = o.getBoundingClientRect(), Z = T.width || Q.width || 0, v = T.height || Q.height || 0;
+  I("x", T.x || 0), I("y", T.y || 0), I("width", Z.toString()), I("height", v.toString());
+  const Ct = F("x", "0"), bt = F("y", "0"), Mt = F("width", Z.toString()), Pt = F("height", v.toString());
+  let n = U(Ct, o, "x"), f = U(bt, o, "y"), p = y(Mt, o, "width"), m = y(Pt, o, "height");
+  const L = /* @__PURE__ */ new Map();
   let J = !1;
-  const V = (e) => {
-    if (i instanceof HTMLElement) {
-      const s = getComputedStyle(i);
-      return (s.position === "absolute" || s.position === "fixed") && s[e] !== "auto" && s[e] !== "";
+  const q = (i) => {
+    if (o instanceof HTMLElement) {
+      const s = getComputedStyle(o);
+      return (s.position === "absolute" || s.position === "fixed") && s[i] !== "auto" && s[i] !== "";
     }
     return !1;
-  }, M = () => V("right"), D = () => V("left"), F = () => V("top"), P = () => V("bottom"), Ht = (e) => {
+  }, P = () => q("right"), B = () => q("left"), D = () => q("top"), H = () => q("bottom"), Ht = (i) => {
     ["top", "right", "bottom", "left"].forEach((s) => {
-      const p = R.get(s);
-      p && (p.style.backgroundColor = e[s] ? "rgba(29, 98, 236, 1)" : "rgba(29, 98, 236, 0)");
+      const u = L.get(s);
+      u && (u.style.backgroundColor = i[s] ? "rgba(29, 98, 236, 1)" : "rgba(29, 98, 236, 0)");
+    });
+  }, wt = () => {
+    L.forEach((i) => {
+      i.style.backgroundColor = "rgba(29, 98, 236, 0)";
     });
   }, Tt = () => {
-    R.forEach((e) => {
-      e.style.backgroundColor = "rgba(29, 98, 236, 0)";
-    });
-  }, Bt = () => {
-    const e = (t == null ? void 0 : t.edges) || {}, s = (t == null ? void 0 : t.margin) ?? 4, p = {
+    const i = (t == null ? void 0 : t.edges) || {}, s = (t == null ? void 0 : t.margin) ?? 4, u = {
       position: "absolute",
       backgroundColor: "rgba(29, 98, 236, 0)",
       // 初始透明
       pointerEvents: "auto",
       // 设置为auto以支持hover效果
       transition: "background-color 0.1s ease"
-    }, u = (r) => {
+    }, l = (r) => {
       const d = () => {
         r.style.backgroundColor = "rgba(29, 98, 236, 1)";
-      }, n = () => {
+      }, h = () => {
         J || (r.style.backgroundColor = "rgba(29, 98, 236, 0)");
       };
-      r.addEventListener("mouseenter", d), r.addEventListener("mouseleave", n), r._mouseEnterListener = d, r._mouseLeaveListener = n;
+      r.addEventListener("mouseenter", d), r.addEventListener("mouseleave", h), r._mouseEnterListener = d, r._mouseLeaveListener = h;
     };
-    if (e.top) {
+    if (i.top) {
       const r = document.createElement("div");
-      Object.assign(r.style, p, {
+      Object.assign(r.style, u, {
         top: `-${s}px`,
         left: "0",
         width: "100%",
         height: "2px",
         cursor: "row-resize",
         zIndex: "10"
-      }), u(r), i.appendChild(r), R.set("top", r);
+      }), l(r), o.appendChild(r), L.set("top", r);
     }
-    if (e.right) {
+    if (i.right) {
       const r = document.createElement("div");
-      Object.assign(r.style, p, {
+      Object.assign(r.style, u, {
         top: "0",
         right: `-${s}px`,
         width: "2px",
         height: "100%",
         cursor: "col-resize",
         zIndex: "10"
-      }), u(r), i.appendChild(r), R.set("right", r);
+      }), l(r), o.appendChild(r), L.set("right", r);
     }
-    if (e.bottom) {
+    if (i.bottom) {
       const r = document.createElement("div");
-      Object.assign(r.style, p, {
+      Object.assign(r.style, u, {
         bottom: `-${s}px`,
         left: "0",
         width: "100%",
         height: "2px",
         cursor: "row-resize",
         zIndex: "10"
-      }), u(r), i.appendChild(r), R.set("bottom", r);
+      }), l(r), o.appendChild(r), L.set("bottom", r);
     }
-    if (e.left) {
+    if (i.left) {
       const r = document.createElement("div");
-      Object.assign(r.style, p, {
+      Object.assign(r.style, u, {
         top: "0",
         left: `-${s}px`,
         width: "2px",
         height: "100%",
         cursor: "col-resize",
         zIndex: "10"
-      }), u(r), i.appendChild(r), R.set("left", r);
+      }), l(r), o.appendChild(r), L.set("left", r);
     }
-  }, Dt = (e) => {
-    R.forEach((s) => {
+  }, Bt = (i) => {
+    L.forEach((s) => {
       s.style.pointerEvents = "auto", s.style.display = "block";
     });
-  }, L = Wt(i).styleCursor(!1);
-  if (z) {
-    const e = (d) => {
-      var n;
-      G && t && L.resizable(!1), (n = a == null ? void 0 : a.onDrag) == null || n.call(a, {
+  }, b = _t(o).styleCursor(!1);
+  if (X) {
+    const i = (d) => {
+      var h;
+      G && t && b.resizable(!1), (h = g == null ? void 0 : g.onDrag) == null || h.call(g, {
         type: "dragstart",
-        top: h,
-        left: f,
+        top: f,
+        left: n,
         deltaX: 0,
         deltaY: 0
       });
     }, s = (d) => {
-      if (f += d.dx, h += d.dy, d.target instanceof HTMLElement) {
-        const n = getComputedStyle(d.target), I = n.position === "absolute" || n.position === "fixed";
-        _ && !I ? d.target.style.transform = `translate(${f}px, ${h}px)` : I ? (M(), D(), F(), P(), D() ? d.target.style.left = `${f}px` : M() ? M() && (d.target.style.right = `${-f}px`) : d.target.style.left = `${f}px`, F() ? d.target.style.top = `${h}px` : P() ? P() && (d.target.style.bottom = `${-h}px`) : d.target.style.top = `${h}px`) : d.target.style.transform = `translate(${f}px, ${h}px)`;
+      if (n += d.dx, f += d.dy, d.target instanceof HTMLElement) {
+        const h = getComputedStyle(d.target), V = h.position === "absolute" || h.position === "fixed";
+        _ && !V ? d.target.style.transform = `translate(${n}px, ${f}px)` : V ? (P(), B(), D(), H(), B() ? d.target.style.left = `${n}px` : P() ? P() && (d.target.style.right = `${-n}px`) : d.target.style.left = `${n}px`, D() ? d.target.style.top = `${f}px` : H() ? H() && (d.target.style.bottom = `${-f}px`) : d.target.style.top = `${f}px`) : d.target.style.transform = `translate(${n}px, ${f}px)`;
       }
       d.target._dataUpdateTimer || (d.target._dataUpdateTimer = setTimeout(() => {
-        d.target instanceof Element && (d.target.setAttribute("data-x", f.toString()), d.target.setAttribute("data-y", h.toString())), delete d.target._dataUpdateTimer;
-      }, 50)), a != null && a.onDrag && requestAnimationFrame(() => {
-        var n;
-        (n = a.onDrag) == null || n.call(a, {
+        d.target instanceof Element && (d.target.setAttribute("data-x", n.toString()), d.target.setAttribute("data-y", f.toString())), delete d.target._dataUpdateTimer;
+      }, 50)), g != null && g.onDrag && requestAnimationFrame(() => {
+        var h;
+        (h = g.onDrag) == null || h.call(g, {
           type: "dragmove",
-          top: h,
-          left: f,
+          top: f,
+          left: n,
           deltaX: d.dx,
           deltaY: d.dy
         });
       });
-    }, p = (d) => {
-      var n;
-      G && t && L.resizable(!0), d.target instanceof Element && (d.target.setAttribute("data-x", f.toString()), d.target.setAttribute("data-y", h.toString())), (n = a == null ? void 0 : a.onDrag) == null || n.call(a, {
+    }, u = (d) => {
+      var h;
+      G && t && b.resizable(!0), d.target instanceof Element && (d.target.setAttribute("data-x", n.toString()), d.target.setAttribute("data-y", f.toString())), (h = g == null ? void 0 : g.onDrag) == null || h.call(g, {
         type: "dragend",
-        top: h,
-        left: f,
+        top: f,
+        left: n,
         deltaX: d.dx,
         deltaY: d.dy
       });
-    }, u = _t(
+    }, l = Ft(
       s,
-      (g == null ? void 0 : g.threshold) ?? jt
+      (a == null ? void 0 : a.threshold) ?? It
     ), r = {
       enabled: !0,
-      allowFrom: g == null ? void 0 : g.allowFrom,
-      ignoreFrom: g == null ? void 0 : g.ignoreFrom,
-      modifiers: (g == null ? void 0 : g.modifiers) || [],
+      allowFrom: a == null ? void 0 : a.allowFrom,
+      ignoreFrom: a == null ? void 0 : a.ignoreFrom,
+      modifiers: (a == null ? void 0 : a.modifiers) || [],
       listeners: {
-        start: e,
-        move: u,
-        end: p
+        start: i,
+        move: l,
+        end: u
       }
     };
-    g != null && g.startAxis && (r.startAxis = g.startAxis), g != null && g.lockAxis && (r.lockAxis = g.lockAxis), (g == null ? void 0 : g.max) !== void 0 && (r.max = g.max), (g == null ? void 0 : g.maxPerElement) !== void 0 && (r.maxPerElement = g.maxPerElement), L.draggable(r);
-  }
-  function x(e, s, p = "width") {
-    if (typeof e == "number")
-      return e;
-    if (typeof e == "string" && e.endsWith("px"))
-      return parseFloat(e);
-    const u = document.createElement("div");
-    Object.assign(u.style, {
-      position: "absolute",
-      visibility: "hidden",
-      // 保持尺寸但不可见
-      zIndex: "-1000",
-      // 确保元素在页面内容的后面
-      margin: "0",
-      padding: "0",
-      border: "none",
-      overflow: "hidden",
-      boxSizing: "border-box",
-      width: p === "width" ? typeof e == "string" ? e : `${e}px` : "auto",
-      height: p === "height" ? typeof e == "string" ? e : `${e}px` : "auto"
-    });
-    try {
-      const r = s.parentNode;
-      (r instanceof Node ? r : document.body).appendChild(u);
-      const n = getComputedStyle(u), U = parseFloat(n[p === "width" ? "width" : "height"]);
-      return isNaN(U) || U <= 0 ? 100 : U;
-    } catch {
-      return 100;
-    } finally {
-      u.parentNode && u.parentNode.removeChild(u);
-    }
+    a != null && a.startAxis && (r.startAxis = a.startAxis), a != null && a.lockAxis && (r.lockAxis = a.lockAxis), (a == null ? void 0 : a.max) !== void 0 && (r.max = a.max), (a == null ? void 0 : a.maxPerElement) !== void 0 && (r.maxPerElement = a.maxPerElement), b.draggable(r);
   }
   if (G && t) {
-    Bt();
-    let e = 10, s = 10, p = 1 / 0, u = 1 / 0, r = l / m;
-    const d = (o) => {
-      var E, $, S, w;
-      Dt(), J = !0, z && g && L.draggable(!1);
-      const b = {
-        top: !!((E = o.edges) != null && E.top),
-        right: !!(($ = o.edges) != null && $.right),
-        bottom: !!((S = o.edges) != null && S.bottom),
-        left: !!((w = o.edges) != null && w.left)
+    Tt();
+    let i = 10, s = 10, u = 1 / 0, l = 1 / 0, r = p / m;
+    const d = (e) => {
+      var E, $, A, M;
+      Bt(), J = !0, X && a && b.draggable(!1);
+      const S = {
+        top: !!((E = e.edges) != null && E.top),
+        right: !!(($ = e.edges) != null && $.right),
+        bottom: !!((A = e.edges) != null && A.bottom),
+        left: !!((M = e.edges) != null && M.left)
       };
-      Ht(b), e = x((t == null ? void 0 : t.minWidth) ?? 10, o.target, "width"), s = x((t == null ? void 0 : t.minHeight) ?? 10, o.target, "height"), p = x((t == null ? void 0 : t.maxWidth) ?? 1 / 0, o.target, "width"), u = x((t == null ? void 0 : t.maxHeight) ?? 1 / 0, o.target, "height"), r = l / m, a != null && a.onResize && requestAnimationFrame(() => {
-        var A;
-        (A = a.onResize) == null || A.call(a, {
+      Ht(S), i = y((t == null ? void 0 : t.minWidth) ?? 10, e.target, "width"), s = y((t == null ? void 0 : t.minHeight) ?? 10, e.target, "height"), u = y((t == null ? void 0 : t.maxWidth) ?? 1 / 0, e.target, "width"), l = y((t == null ? void 0 : t.maxHeight) ?? 1 / 0, e.target, "height"), r = p / m, g != null && g.onResize && requestAnimationFrame(() => {
+        var R;
+        (R = g.onResize) == null || R.call(g, {
           type: "resizestart",
-          width: l,
+          width: p,
           height: m,
-          top: h,
-          left: f,
+          top: f,
+          left: n,
           deltaWidth: 0,
           deltaHeight: 0,
-          edges: b
+          edges: S
         });
       });
-    }, n = (o) => {
-      var et, ot, it, rt, st, dt, at, gt, nt, ft, ht, pt, ut, lt, mt, yt, xt, ct, Et, $t, St, bt, At, Rt;
-      const b = M(), E = D(), $ = F(), S = P(), w = o.target instanceof HTMLElement ? getComputedStyle(o.target) : null, A = ((et = o.deltaRect) == null ? void 0 : et.width) || 0, H = ((ot = o.deltaRect) == null ? void 0 : ot.height) || 0;
-      let C = A, W = H;
-      t != null && t.preserveAspectRatio && !b && !E && !$ && !S && ((it = o.edges) != null && it.left || (rt = o.edges) != null && rt.right ? W = A / r : ((st = o.edges) != null && st.top || (dt = o.edges) != null && dt.bottom) && (C = H * r));
-      let Y = l + C, X = m + W;
-      if (Y = Math.max(e, Math.min(p, Y)), X = Math.max(s, Math.min(u, X)), C = Y - l, W = X - m, C === 0 && W === 0)
+    }, h = (e) => {
+      var tt, et, ot, it, rt, st, dt, gt, at, nt, ft, ht, ut, lt, pt, mt, xt, yt, ct, Et, $t, At, St, Rt;
+      const S = P(), E = B(), $ = D(), A = H(), M = e.target instanceof HTMLElement ? getComputedStyle(e.target) : null, R = ((tt = e.deltaRect) == null ? void 0 : tt.width) || 0, w = ((et = e.deltaRect) == null ? void 0 : et.height) || 0;
+      let C = R, W = w;
+      t != null && t.preserveAspectRatio && !S && !E && !$ && !A && ((ot = e.edges) != null && ot.left || (it = e.edges) != null && it.right ? W = R / r : ((rt = e.edges) != null && rt.top || (st = e.edges) != null && st.bottom) && (C = w * r));
+      let j = p + C, z = m + W;
+      if (j = Math.max(i, Math.min(u, j)), z = Math.max(s, Math.min(l, z)), C = j - p, W = z - m, C === 0 && W === 0)
         return;
-      if ((b || E || $ || S) && w) {
-        const y = o.target.getBoundingClientRect();
-        (Math.abs(y.width - l) > 1 || Math.abs(y.height - m) > 1) && (l = y.width, m = y.height);
+      if ((S || E || $ || A) && M) {
+        const x = e.target.getBoundingClientRect();
+        (Math.abs(x.width - p) > 1 || Math.abs(x.height - m) > 1) && (p = x.width, m = x.height);
       }
-      if (!b && !E && !$ && !S && ((at = o.edges) != null && at.top && (h -= W), (gt = o.edges) != null && gt.right, (nt = o.edges) != null && nt.bottom, (ft = o.edges) != null && ft.left && (f -= C)), l = Y, m = X, ((ht = o.edges) != null && ht.left || (pt = o.edges) != null && pt.right) && (o.target.style.width = `${l}px`), ((ut = o.edges) != null && ut.top || (lt = o.edges) != null && lt.bottom) && (o.target.style.height = `${m}px`), (mt = o.edges) != null && mt.top && S) {
-        const y = (yt = o.target.parentElement) == null ? void 0 : yt.getBoundingClientRect();
-        if (y) {
-          const K = parseInt(getComputedStyle(o.target).bottom || "0", 10), Q = y.height - m - K;
-          o.target.style.top = `${Q}px`;
+      if (!S && !E && !$ && !A && ((dt = e.edges) != null && dt.top && (f -= W), (gt = e.edges) != null && gt.right, (at = e.edges) != null && at.bottom, (nt = e.edges) != null && nt.left && (n -= C)), p = j, m = z, ((ft = e.edges) != null && ft.left || (ht = e.edges) != null && ht.right) && (e.target.style.width = `${p}px`), ((ut = e.edges) != null && ut.top || (lt = e.edges) != null && lt.bottom) && (e.target.style.height = `${m}px`), (pt = e.edges) != null && pt.top && A) {
+        const x = (mt = e.target.parentElement) == null ? void 0 : mt.getBoundingClientRect();
+        if (x) {
+          const K = parseInt(getComputedStyle(e.target).bottom || "0", 10), N = x.height - m - K;
+          e.target.style.top = `${N}px`;
         }
       }
-      if ((xt = o.edges) != null && xt.left && b) {
-        const y = (ct = o.target.parentElement) == null ? void 0 : ct.getBoundingClientRect();
-        if (y) {
-          const K = parseInt(getComputedStyle(o.target).right || "0", 10), Q = y.width - l - K;
-          o.target.style.left = `${Q}px`;
+      if ((xt = e.edges) != null && xt.left && S) {
+        const x = (yt = e.target.parentElement) == null ? void 0 : yt.getBoundingClientRect();
+        if (x) {
+          const K = parseInt(getComputedStyle(e.target).right || "0", 10), N = x.width - p - K;
+          e.target.style.left = `${N}px`;
         }
       }
-      if ((Et = o.edges) != null && Et.right && E) {
-        const y = parseInt(getComputedStyle(o.target).left || "0", 10);
-        o.target.style.left = `${y}px`;
+      if ((ct = e.edges) != null && ct.right && E) {
+        const x = parseInt(getComputedStyle(e.target).left || "0", 10);
+        e.target.style.left = `${x}px`;
       }
-      if (($t = o.edges) != null && $t.bottom && $) {
-        const y = parseInt(getComputedStyle(o.target).top || "0", 10);
-        o.target.style.top = `${y}px`;
+      if ((Et = e.edges) != null && Et.bottom && $) {
+        const x = parseInt(getComputedStyle(e.target).top || "0", 10);
+        e.target.style.top = `${x}px`;
       }
-      !b && !E && !$ && !S && _ && (o.target.style.transform = `translate(${f}px, ${h}px)`);
-      const It = {
-        top: !!((St = o.edges) != null && St.top),
-        right: !!((bt = o.edges) != null && bt.right),
-        bottom: !!((At = o.edges) != null && At.bottom),
-        left: !!((Rt = o.edges) != null && Rt.left)
+      !S && !E && !$ && !A && _ && (e.target.style.transform = `translate(${n}px, ${f}px)`);
+      const Wt = {
+        top: !!(($t = e.edges) != null && $t.top),
+        right: !!((At = e.edges) != null && At.right),
+        bottom: !!((St = e.edges) != null && St.bottom),
+        left: !!((Rt = e.edges) != null && Rt.left)
       };
-      a != null && a.onResize && requestAnimationFrame(() => {
-        var y;
-        (y = a.onResize) == null || y.call(a, {
+      g != null && g.onResize && requestAnimationFrame(() => {
+        var x;
+        (x = g.onResize) == null || x.call(g, {
           type: "resizemove",
-          width: l,
+          width: p,
           height: m,
-          top: h,
-          left: f,
-          deltaWidth: A,
-          deltaHeight: H,
-          edges: It
+          top: f,
+          left: n,
+          deltaWidth: R,
+          deltaHeight: w,
+          edges: Wt
         });
       });
-    }, I = (o) => {
-      var E, $, S, w;
-      J = !1, z && g && L.draggable(!0), Tt(), o.target instanceof Element && (o.target.setAttribute("data-x", f.toString()), o.target.setAttribute("data-y", h.toString()), o.target.setAttribute("data-width", l.toString()), o.target.setAttribute("data-height", m.toString()));
-      const b = {
-        top: !!((E = o.edges) != null && E.top),
-        right: !!(($ = o.edges) != null && $.right),
-        bottom: !!((S = o.edges) != null && S.bottom),
-        left: !!((w = o.edges) != null && w.left)
+    }, V = (e) => {
+      var E, $, A, M;
+      J = !1, X && a && b.draggable(!0), wt(), e.target instanceof Element && (e.target.setAttribute("data-x", n.toString()), e.target.setAttribute("data-y", f.toString()), e.target.setAttribute("data-width", p.toString()), e.target.setAttribute("data-height", m.toString()));
+      const S = {
+        top: !!((E = e.edges) != null && E.top),
+        right: !!(($ = e.edges) != null && $.right),
+        bottom: !!((A = e.edges) != null && A.bottom),
+        left: !!((M = e.edges) != null && M.left)
       };
       requestAnimationFrame(() => {
-        var A, H, C;
-        (C = a == null ? void 0 : a.onResize) == null || C.call(a, {
+        var R, w, C;
+        (C = g == null ? void 0 : g.onResize) == null || C.call(g, {
           type: "resizeend",
-          width: l,
+          width: p,
           height: m,
-          top: h,
-          left: f,
-          deltaWidth: ((A = o.deltaRect) == null ? void 0 : A.width) || 0,
-          deltaHeight: ((H = o.deltaRect) == null ? void 0 : H.height) || 0,
-          edges: b
+          top: f,
+          left: n,
+          deltaWidth: ((R = e.deltaRect) == null ? void 0 : R.width) || 0,
+          deltaHeight: ((w = e.deltaRect) == null ? void 0 : w.height) || 0,
+          edges: S
         });
       });
-    }, Ft = n, c = {
+    }, Dt = h, c = {
       enabled: !0,
       edges: (t == null ? void 0 : t.edges) || {},
       modifiers: (t == null ? void 0 : t.modifiers) || [],
       listeners: {
         start: d,
-        move: Ft,
-        end: I
+        move: Dt,
+        end: V
       }
     };
-    (t == null ? void 0 : t.square) !== void 0 && (c.square = t.square), (t == null ? void 0 : t.preserveAspectRatio) !== void 0 && (c.preserveAspectRatio = t.preserveAspectRatio), t != null && t.invert && (c.invert = t.invert), (t == null ? void 0 : t.margin) !== void 0 && (c.margin = t.margin), (t == null ? void 0 : t.max) !== void 0 && (c.max = t.max), (t == null ? void 0 : t.maxPerElement) !== void 0 && (c.maxPerElement = t.maxPerElement), (t == null ? void 0 : t.minWidth) !== void 0 && (c.minWidth = x(t.minWidth, i, "width")), (t == null ? void 0 : t.minHeight) !== void 0 && (c.minHeight = x(t.minHeight, i, "height")), (t == null ? void 0 : t.maxWidth) !== void 0 && (c.maxWidth = x(t.maxWidth, i, "width")), (t == null ? void 0 : t.maxHeight) !== void 0 && (c.maxHeight = x(t.maxHeight, i, "height"));
+    (t == null ? void 0 : t.square) !== void 0 && (c.square = t.square), (t == null ? void 0 : t.preserveAspectRatio) !== void 0 && (c.preserveAspectRatio = t.preserveAspectRatio), t != null && t.invert && (c.invert = t.invert), (t == null ? void 0 : t.margin) !== void 0 && (c.margin = t.margin), (t == null ? void 0 : t.max) !== void 0 && (c.max = t.max), (t == null ? void 0 : t.maxPerElement) !== void 0 && (c.maxPerElement = t.maxPerElement), (t == null ? void 0 : t.minWidth) !== void 0 && (c.minWidth = y(t.minWidth, o, "width")), (t == null ? void 0 : t.minHeight) !== void 0 && (c.minHeight = y(t.minHeight, o, "height")), (t == null ? void 0 : t.maxWidth) !== void 0 && (c.maxWidth = y(t.maxWidth, o, "width")), (t == null ? void 0 : t.maxHeight) !== void 0 && (c.maxHeight = y(t.maxHeight, o, "height"));
     try {
-      L.resizable(c);
-    } catch (o) {
-      console.error("Error setting up resizable:", o);
+      b.resizable(c);
+    } catch (e) {
+      console.error("Error setting up resizable:", e);
     }
   }
-  if (i instanceof HTMLElement && (i.style.transition = "none", i.style.width = `${l}px`, i.style.height = `${m}px`), i instanceof HTMLElement) {
-    const e = getComputedStyle(i), s = e.position === "absolute" || e.position === "fixed";
-    _ && !s ? i.style.transform = `translate(${f}px, ${h}px)` : s ? (!M() && !D() && (i.style.left = `${f}px`), !F() && !P() && (i.style.top = `${h}px`)) : i.style.transform = `translate(${f}px, ${h}px)`;
+  if (o instanceof HTMLElement && (o.style.transition = "none", o.style.width = `${p}px`, o.style.height = `${m}px`), o instanceof HTMLElement) {
+    const i = getComputedStyle(o), s = i.position === "absolute" || i.position === "fixed";
+    _ && !s ? o.style.transform = `translate(${n}px, ${f}px)` : s ? (!P() && !B() && (o.style.left = `${n}px`), !D() && !H() && (o.style.top = `${f}px`)) : o.style.transform = `translate(${n}px, ${f}px)`;
   }
-  const k = (e, s) => {
-    if (f = N(e, i, "x"), h = N(s, i, "y"), i instanceof HTMLElement) {
-      const p = getComputedStyle(i), u = p.position === "absolute" || p.position === "fixed", r = (n) => {
-        typeof n == "string" && B(n) && u ? i.style.left = n : i.style.left = `${f}px`;
-      }, d = (n) => {
-        typeof n == "string" && B(n) && u ? i.style.top = n : i.style.top = `${h}px`;
+  const O = (i, s) => {
+    if (n = U(i, o, "x"), f = U(s, o, "y"), o instanceof HTMLElement) {
+      const u = getComputedStyle(o), l = u.position === "absolute" || u.position === "fixed", r = (h) => {
+        typeof h == "string" && Y(h) && l ? o.style.left = h : o.style.left = `${n}px`;
+      }, d = (h) => {
+        typeof h == "string" && Y(h) && l ? o.style.top = h : o.style.top = `${f}px`;
       };
-      _ && !u ? i.style.transform = `translate(${f}px, ${h}px)` : u ? (!M() && !D() && r(e), !F() && !P() && d(s)) : i.style.transform = `translate(${f}px, ${h}px)`;
+      _ && !l ? o.style.transform = `translate(${n}px, ${f}px)` : l ? (!P() && !B() && r(i), !D() && !H() && d(s)) : o.style.transform = `translate(${n}px, ${f}px)`;
     }
-    i instanceof Element && (i.setAttribute("data-x", typeof e == "string" ? e : f.toString()), i.setAttribute("data-y", typeof s == "string" ? s : h.toString()));
-  }, tt = (e, s) => {
-    if (l = typeof e == "number" ? e : x(e, i, "width"), m = typeof s == "number" ? s : x(s, i, "height"), i instanceof HTMLElement) {
-      const p = (r) => {
-        typeof r == "string" && B(r) ? i.style.width = r : i.style.width = `${l}px`;
-      }, u = (r) => {
-        typeof r == "string" && B(r) ? i.style.height = r : i.style.height = `${m}px`;
+    o instanceof Element && (o.setAttribute("data-x", typeof i == "string" ? i : n.toString()), o.setAttribute("data-y", typeof s == "string" ? s : f.toString()));
+  }, k = (i, s) => {
+    if (p = typeof i == "number" ? i : y(i, o, "width"), m = typeof s == "number" ? s : y(s, o, "height"), o instanceof HTMLElement) {
+      const u = (r) => {
+        typeof r == "string" && Y(r) ? o.style.width = r : o.style.width = `${p}px`;
+      }, l = (r) => {
+        typeof r == "string" && Y(r) ? o.style.height = r : o.style.height = `${m}px`;
       };
-      p(e), u(s);
+      u(i), l(s);
     }
-    i instanceof Element && (i.setAttribute("data-width", typeof e == "string" ? e : l.toString()), i.setAttribute("data-height", typeof s == "string" ? s : m.toString()));
+    o instanceof Element && (o.setAttribute("data-width", typeof i == "string" ? i : p.toString()), o.setAttribute("data-height", typeof s == "string" ? s : m.toString()));
   };
   return {
     cleanup: () => {
-      R.forEach((e) => {
-        e._mouseEnterListener && e.removeEventListener("mouseenter", e._mouseEnterListener), e._mouseLeaveListener && e.removeEventListener("mouseleave", e._mouseLeaveListener), e.remove();
+      L.forEach((i) => {
+        i._mouseEnterListener && i.removeEventListener("mouseenter", i._mouseEnterListener), i._mouseLeaveListener && i.removeEventListener("mouseleave", i._mouseLeaveListener), i.remove();
       });
       try {
-        L.unset();
-      } catch (e) {
-        console.error("Error unsetting interactable:", e);
+        b.unset();
+      } catch (i) {
+        console.error("Error unsetting interactable:", i);
       }
     },
-    updatePositionAndSize: (e, s, p, u) => {
-      k(e, s), tt(p, u);
+    updatePositionAndSize: (i, s, u, l) => {
+      O(i, s), k(u, l);
     },
-    updatePosition: k,
-    updateSize: tt
+    updatePosition: O,
+    updateSize: k
   };
 }
 export {
-  Yt as makeElementDraggableResizable
+  Xt as makeElementDraggableResizable
 };
 //# sourceMappingURL=interact-helper.mjs.map

@@ -1,8 +1,10 @@
 import interact from 'interactjs'
 import { throttle } from '@vexip-ui/utils'
 
-import type { DragEvent, Interactable, ResizeEvent } from '@interactjs/types'
 import { isCssUnitValue, parseCssSize, parsePositionValue } from './css-units'
+
+import type { DragEvent, Interactable, ResizeEvent } from '@interactjs/types'
+
 
 /** 扩展Element类型以支持_dataUpdateTimer属性和事件监听器引用 */
 declare global {
@@ -441,39 +443,26 @@ export function makeElementDraggableResizable(
       if (event.target instanceof HTMLElement) {
         const computedStyle = getComputedStyle(event.target)
         const isAbsoluteOrFixed = computedStyle.position === 'absolute' || computedStyle.position === 'fixed'
-        console.log('cachedX:', cachedX)
-        console.log('cachedY:', cachedY)
 
         if (useCssTransforms && !isAbsoluteOrFixed) {
           // 对于非绝对/固定定位元素，使用transform
           event.target.style.transform = `translate(${cachedX}px, ${cachedY}px)`
         } else if (isAbsoluteOrFixed) {
-          console.log('Using direct positioning for absolute/fixed element')
-          console.log('isRightPositioned:', isRightPositioned())
-          console.log('isLeftPositioned:', isLeftPositioned())
-          console.log('isTopPositioned:', isTopPositioned())
-          console.log('isBottomPositioned:', isBottomPositioned())
           // 对于绝对/固定定位元素，使用直接定位
           // 优先级：left > right, top > bottom
           if (isLeftPositioned()) {
-            console.log('Updating left position (existing left positioning)')
             event.target.style.left = `${cachedX}px`
           } else if (!isRightPositioned()) {
-            console.log('Updating left position (no conflicting positioning)')
             event.target.style.left = `${cachedX}px`
           } else if (isRightPositioned()) {
-            console.log('Updating right position (existing right positioning)')
             event.target.style.right = `${-cachedX}px`
           }
           
           if (isTopPositioned()) {
-            console.log('Updating top position (existing top positioning)')
             event.target.style.top = `${cachedY}px`
           } else if (!isBottomPositioned()) {
-            console.log('Updating top position (no conflicting positioning)')
             event.target.style.top = `${cachedY}px`
           } else if (isBottomPositioned()) {
-            console.log('Updating bottom position (existing bottom positioning)')
             event.target.style.bottom = `${-cachedY}px`
           }
         } else {
@@ -1016,11 +1005,9 @@ export function makeElementDraggableResizable(
     const isAbsoluteOrFixed = computedStyle.position === 'absolute' || computedStyle.position === 'fixed'
     
     if (useCssTransforms && !isAbsoluteOrFixed) {
-      console.log('Using transform for non-absolute/fixed element')
       // 对于非绝对/固定定位元素（如relative或static），使用transform
       element.style.transform = `translate(${cachedX}px, ${cachedY}px)`
     } else if (isAbsoluteOrFixed) {
-      console.log('Using direct positioning for absolute/fixed element')
       // 对于绝对/固定定位元素，使用直接定位
       if (!isRightPositioned() && !isLeftPositioned()) {
         element.style.left = `${cachedX}px`
