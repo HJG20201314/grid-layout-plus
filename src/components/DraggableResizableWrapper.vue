@@ -52,10 +52,10 @@ const emit = defineEmits<DraggableResizableWrapperEmits>()
 
 /** 定义响应式数据 */
 const elementRef = ref<HTMLElement>()
-const x = ref<number>(props.initialX)
-const y = ref<number>(props.initialY)
-const width = ref<number>(props.initialWidth)
-const height = ref<number>(props.initialHeight)
+const x = ref<number>(typeof props.initialX === 'number' ? props.initialX : 0)
+const y = ref<number>(typeof props.initialY === 'number' ? props.initialY : 0)
+const width = ref<number>(typeof props.initialWidth === 'number' ? props.initialWidth : 200)
+const height = ref<number>(typeof props.initialHeight === 'number' ? props.initialHeight : 150)
 const isDragging = ref<boolean>(false)
 const isResizing = ref<boolean>(false)
 const activeEdges = ref<Partial<ElementEdges>>({})
@@ -201,11 +201,10 @@ stopWatchListener.push(
     ([newX, newY, newWidth, newHeight]) => {
       if (updatePositionAndSizeFunction) {
         updatePositionAndSizeFunction(newX, newY, newWidth, newHeight)
-        // 更新内部状态
-        x.value = newX
-        y.value = newY
-        width.value = newWidth
-        height.value = newHeight
+        if (typeof newX === 'number') x.value = newX
+        if (typeof newY === 'number') y.value = newY
+        if (typeof newWidth === 'number') width.value = newWidth
+        if (typeof newHeight === 'number') height.value = newHeight
       }
     }),
 )
@@ -216,34 +215,31 @@ onMounted((): void => {
 })
 
 /** 公开方法：更新位置和尺寸 */
-const updatePositionAndSize = (newX: number, newY: number, newWidth: number, newHeight: number): void => {
+const updatePositionAndSize = (newX: number | string, newY: number | string, newWidth: number | string, newHeight: number | string): void => {
   if (updatePositionAndSizeFunction) {
     updatePositionAndSizeFunction(newX, newY, newWidth, newHeight)
-    // 更新内部状态
-    x.value = newX
-    y.value = newY
-    width.value = newWidth
-    height.value = newHeight
+    if (typeof newX === 'number') x.value = newX
+    if (typeof newY === 'number') y.value = newY
+    if (typeof newWidth === 'number') width.value = newWidth
+    if (typeof newHeight === 'number') height.value = newHeight
   }
 }
 
 /** 公开方法：更新位置 */
-const updatePosition = (newX: number, newY: number): void => {
+const updatePosition = (newX: number | string, newY: number | string): void => {
   if (updatePositionFunction) {
     updatePositionFunction(newX, newY)
-    // 更新内部状态
-    x.value = newX
-    y.value = newY
+    if (typeof newX === 'number') x.value = newX
+    if (typeof newY === 'number') y.value = newY
   }
 }
 
 /** 公开方法：更新尺寸 */
-const updateSize = (newWidth: number, newHeight: number): void => {
+const updateSize = (newWidth: number | string, newHeight: number | string): void => {
   if (updateSizeFunction) {
     updateSizeFunction(newWidth, newHeight)
-    // 更新内部状态
-    width.value = newWidth
-    height.value = newHeight
+    if (typeof newWidth === 'number') width.value = newWidth
+    if (typeof newHeight === 'number') height.value = newHeight
   }
 }
 
