@@ -3,10 +3,18 @@
     <div class="scene-selector">
       <label>选择模式：</label>
       <select v-model="mode">
-        <option value="right-fixed">1. 右侧固定，左侧缩放</option>
-        <option value="left-fixed">2. 左侧固定，右侧缩放</option>
-        <option value="bottom-fixed">3. 底部固定，顶部缩放</option>
-        <option value="top-fixed">4. 顶部固定，底部缩放</option>
+        <option value="right-fixed">
+          1. 右侧固定，左侧缩放
+        </option>
+        <option value="left-fixed">
+          2. 左侧固定，右侧缩放
+        </option>
+        <option value="bottom-fixed">
+          3. 底部固定，顶部缩放
+        </option>
+        <option value="top-fixed">
+          4. 顶部固定，底部缩放
+        </option>
       </select>
     </div>
 
@@ -27,7 +35,9 @@
         <div class="drawer-panel">
           <div class="drawer-header">
             <span>抽屉面板 ({{ modeLabel }})</span>
-            <button class="close-btn" disabled>×</button>
+            <button class="close-btn" disabled>
+              ×
+            </button>
           </div>
           <div class="drawer-body">
             <p>当前宽度: {{ Math.round(width) }}px</p>
@@ -55,7 +65,9 @@
         <div class="drawer-panel vertical">
           <div class="drawer-header">
             <span>抽屉面板 ({{ modeLabel }})</span>
-            <button class="close-btn" disabled>×</button>
+            <button class="close-btn" disabled>
+              ×
+            </button>
           </div>
           <div class="drawer-body">
             <p>当前高度: {{ Math.round(height) }}px</p>
@@ -70,6 +82,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+
 import DraggableResizableWrapper from '../../src/components/DraggableResizableWrapper.vue'
 
 const mode = ref<'right-fixed' | 'left-fixed' | 'bottom-fixed' | 'top-fixed'>('right-fixed')

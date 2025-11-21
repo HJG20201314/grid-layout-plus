@@ -2,6 +2,7 @@ import interact from 'interactjs'
 import { throttle } from '@vexip-ui/utils'
 
 import type { DragEvent, Interactable, ResizeEvent } from '@interactjs/types'
+import { isCssUnitValue, parseCssSize, parsePositionValue } from './css-units'
 
 /** 扩展Element类型以支持_dataUpdateTimer属性和事件监听器引用 */
 declare global {
@@ -236,20 +237,6 @@ export function makeElementDraggableResizable(
   const initialY = getData('y', '0')
   const initialWidth = getData('width', width.toString())
   const initialHeight = getData('height', height.toString())
-  
-  // 新增: 通用CSS数值解析工具 (位置/尺寸)
-  const isCssUnitValue = (val: unknown): val is string => typeof val === 'string' && /(px|%|vw|vh|rem|em|calc\()/i.test(val)
-
-  const parsePositionValue = (
-    value: number | string,
-    element: HTMLElement | SVGElement,
-    axis: 'x' | 'y',
-  ): number => {
-    if (typeof value === 'number') return value
-    if (!isCssUnitValue(value)) return parseFloat(value) || 0
-    // 使用尺寸解析逻辑, x -> width, y -> height
-    return parseCssSize(value, element, axis === 'x' ? 'width' : 'height')
-  }
 
   // 使用解析后的初始缓存值 (内部统一使用像素值计算)
   let cachedX = parsePositionValue(initialX, element, 'x')
@@ -506,7 +493,7 @@ export function makeElementDraggableResizable(
         }, 50)
       }
 
-      // 如果有回调，使用requestAnimationFrame异步处理以提高性能
+      // 如果有回调，使用requestAnimationFrame异态处理以提高性能
       if (callbacks?.onDrag) {
         requestAnimationFrame(() => {
           callbacks.onDrag?.({
@@ -573,53 +560,95 @@ export function makeElementDraggableResizable(
     interactable.draggable(draggableConfig)
   }
 
-  // 解析CSS尺寸值为像素值的辅助函数
-  // 添加direction参数来区分是宽度还是高度的计算
-  function parseCssSize(
-    size: number | string,
-    element: HTMLElement | SVGElement,
-    direction: 'width' | 'height' = 'width',
-  ): number {
-    if (typeof size === 'number') {
-      return size
-    }
+  // 解析CSS尺寸值为像素值的辅助函数 (已抽离至 css-units.ts)
+  // function parseCssSize(
+  //   size: number | string,
+  //   element: HTMLElement | SVGElement,
+  //   direction: 'width' | 'height' = 'width',
+  // ): number {
+  //   // 数字直接返回 (包括 Infinity)
+  //   if (typeof size === 'number') return size
 
-    // 如果已经是像素值格式，直接解析
-    if (typeof size === 'string' && size.endsWith('px')) {
-      return parseFloat(size)
-    }
+  //   if (typeof size !== 'string' || !size) return 0
 
-    // 创建临时元素，使用getComputedStyle来获取实际像素值
-    const temp = document.createElement('div')
+  //   const raw = size.trim()
+  //   // 纯数字字符串
+  //   if (/^[-+]?[0-9]*\.?[0-9]+$/.test(raw)) return parseFloat(raw)
 
-    // 基础样式设置，确保准确计算
-    Object.assign(temp.style, {
-      position: 'absolute',
-      visibility: 'hidden', // 保持尺寸但不可见
-      zIndex: '-1000', // 确保元素在页面内容的后面
-      margin: '0',
-      padding: '0',
-      border: 'none',
-      overflow: 'hidden',
-      boxSizing: 'border-box',
-      width: direction === 'width' ? (typeof size === 'string' ? size : `${size}px`) : 'auto',
-      height: direction === 'height' ? (typeof size === 'string' ? size : `${size}px`) : 'auto',
-    })
+  //   // px
+  //   if (/px$/i.test(raw)) return parseFloat(raw)
 
-    try {
-      const parentNode = element.parentNode
-      const container = parentNode instanceof Node ? parentNode : document.body
-      container.appendChild(temp)
-      const computedStyle = getComputedStyle(temp as HTMLElement)
-      const sizeProperty = direction === 'width' ? 'width' : 'height'
-      const sizeInPixels = parseFloat(computedStyle[sizeProperty])
-      return isNaN(sizeInPixels) || sizeInPixels <= 0 ? 100 : sizeInPixels
-    } catch {
-      return 100
-    } finally {
-      if (temp.parentNode) temp.parentNode.removeChild(temp)
-    }
-  }
+  //   // viewport 单位
+  //   if (/vh$/i.test(raw)) {
+  //     const v = parseFloat(raw)
+  //     return isNaN(v) ? 0 : window.innerHeight * v / 100
+  //   }
+  //   if (/vw$/i.test(raw)) {
+  //     const v = parseFloat(raw)
+  //     return isNaN(v) ? 0 : window.innerWidth * v / 100
+  //   }
+
+  //   // 百分比：相对于父元素尺寸 (没有父则返回0)
+  //   if (/%$/i.test(raw)) {
+  //     const v = parseFloat(raw)
+  //     const parent = element.parentElement
+  //     if (!parent || isNaN(v)) return 0
+  //     const rect = parent.getBoundingClientRect()
+  //     const base = direction === 'width' ? rect.width : rect.height
+  //     return base * v / 100
+  //   }
+
+  //   // rem / em
+  //   if (/rem$/i.test(raw)) {
+  //     const v = parseFloat(raw)
+  //     const rootSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+  //     return rootSize * v
+  //   }
+  //   if (/em$/i.test(raw)) {
+  //     const v = parseFloat(raw)
+  //     const selfSize = element instanceof HTMLElement
+  //       ? parseFloat(getComputedStyle(element).fontSize)
+  //       : parseFloat(getComputedStyle(document.documentElement).fontSize)
+  //     return (selfSize || 16) * v
+  //   }
+
+  //   // calc(...) 或其它复杂表达式：使用临时元素测量
+  //   if (/calc\(/i.test(raw)) {
+  //     const temp = document.createElement('div')
+  //     temp.style.position = 'absolute'
+  //     temp.style.visibility = 'hidden'
+  //     temp.style.pointerEvents = 'none'
+  //     temp.style.margin = '0'
+  //     temp.style.padding = '0'
+  //     temp.style.border = '0'
+  //     temp.style.boxSizing = 'border-box'
+  //     if (direction === 'width') temp.style.width = raw
+  //     else temp.style.height = raw
+  //     const container = element.parentElement || document.body
+  //     container.appendChild(temp)
+  //     const pixels = parseFloat(getComputedStyle(temp)[direction])
+  //     temp.remove()
+  //     if (!isNaN(pixels) && pixels > 0) return pixels
+  //     return 0
+  //   }
+
+  //   // 未识别单位时尝试最终降级：用临时元素测量 (支持诸如 ch, ex 等不常用单位)
+  //   const temp = document.createElement('div')
+  //   temp.style.position = 'absolute'
+  //   temp.style.visibility = 'hidden'
+  //   temp.style.pointerEvents = 'none'
+  //   temp.style.margin = '0'
+  //   temp.style.padding = '0'
+  //   temp.style.border = '0'
+  //   temp.style.boxSizing = 'border-box'
+  //   if (direction === 'width') temp.style.width = raw
+  //   else temp.style.height = raw
+  //   const container = element.parentElement || document.body
+  //   container.appendChild(temp)
+  //   const pixels = parseFloat(getComputedStyle(temp)[direction])
+  //   temp.remove()
+  //   return isNaN(pixels) ? 0 : pixels
+  // }
 
   // 配置调整大小功能
   if (resizable && resizeOptions) {
@@ -663,7 +692,7 @@ export function makeElementDraggableResizable(
       cachedMaxHeight = parseCssSize(resizeOptions?.maxHeight ?? Infinity, event.target, 'height')
       cachedAspectRatio = cachedWidth / cachedHeight
 
-      // 如果有回调，使用requestAnimationFrame异步处理以提高性能
+      // 如果有回调，使用requestAnimationFrame异态处理以提高性能
       if (callbacks?.onResize) {
         requestAnimationFrame(() => {
           callbacks.onResize?.({
@@ -864,7 +893,7 @@ export function makeElementDraggableResizable(
         left: Boolean(event.edges?.left),
       }
 
-      // 如果有回调，使用requestAnimationFrame异步处理以提高性能
+      // 如果有回调，使用requestAnimationFrame异态处理以提高性能
       if (callbacks?.onResize) {
         requestAnimationFrame(() => {
           callbacks.onResize?.({

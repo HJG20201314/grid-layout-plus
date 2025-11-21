@@ -31,6 +31,7 @@ import {
   type ResizeEventCallbackData,
   makeElementDraggableResizable,
 } from '../utils/interact-helper'
+import { parseCssSize, parsePositionValue } from '../utils/css-units'
 
 /** 定义组件的 props */
 const props = withDefaults(defineProps<DraggableResizableWrapperProps>(), {
@@ -52,6 +53,8 @@ const emit = defineEmits<DraggableResizableWrapperEmits>()
 
 /** 定义响应式数据 */
 const elementRef = ref<HTMLElement>()
+
+/** 恢复丢失的响应式状态定义 (位置/尺寸 + 交互状态) */
 const x = ref<number>(typeof props.initialX === 'number' ? props.initialX : 0)
 const y = ref<number>(typeof props.initialY === 'number' ? props.initialY : 0)
 const width = ref<number>(typeof props.initialWidth === 'number' ? props.initialWidth : 200)
@@ -212,6 +215,11 @@ stopWatchListener.push(
 /** 组件挂载时初始化 */
 onMounted((): void => {
   initializeInteract()
+  // 挂载后如果初始值为字符串单位, 解析为像素更新
+  if (typeof props.initialX === 'string') x.value = parsePositionValue(props.initialX, elementRef.value, 'x')
+  if (typeof props.initialY === 'string') y.value = parsePositionValue(props.initialY, elementRef.value, 'y')
+  if (typeof props.initialWidth === 'string') width.value = parseCssSize(props.initialWidth, elementRef.value, 'width')
+  if (typeof props.initialHeight === 'string') height.value = parseCssSize(props.initialHeight, elementRef.value, 'height')
 })
 
 /** 公开方法：更新位置和尺寸 */
