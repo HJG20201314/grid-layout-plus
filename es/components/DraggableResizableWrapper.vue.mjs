@@ -1,6 +1,6 @@
-import { defineComponent as C, ref as l, computed as S, watch as k, onMounted as M, onUnmounted as F, createElementBlock as I, openBlock as T, renderSlot as H, normalizeProps as W, guardReactiveProps as X } from "vue";
-import { makeElementDraggableResizable as Y } from "../utils/interact-helper.mjs";
-const $ = /* @__PURE__ */ C({
+import { defineComponent as C, ref as l, computed as S, watch as k, onMounted as M, onUnmounted as F, createElementBlock as I, openBlock as T, renderSlot as U, normalizeProps as $, guardReactiveProps as j } from "vue";
+import { makeElementDraggableResizable as q } from "../utils/interact-helper.mjs";
+const J = /* @__PURE__ */ C({
   __name: "DraggableResizableWrapper",
   props: {
     draggable: { type: Boolean, default: !0 },
@@ -17,40 +17,40 @@ const $ = /* @__PURE__ */ C({
   },
   emits: ["dragStart", "dragMove", "dragEnd", "resizeStart", "resizeMove", "resizeEnd"],
   setup(E, { expose: O, emit: P }) {
-    const t = E, u = P, a = l(), s = l(t.initialX), n = l(t.initialY), d = l(t.initialWidth), c = l(t.initialHeight), f = l(!1), z = l(!1), b = l({});
-    let r = null, p = null, h = null, m = null;
+    const t = E, f = P, a = l(), r = l(typeof t.initialX == "number" ? t.initialX : 0), n = l(typeof t.initialY == "number" ? t.initialY : 0), d = l(typeof t.initialWidth == "number" ? t.initialWidth : 200), c = l(typeof t.initialHeight == "number" ? t.initialHeight : 150), v = l(!1), m = l(!1), y = l({});
+    let s = null, g = null, b = null, z = null;
     const o = [], R = S(() => ({
-      x: s.value,
+      x: r.value,
       y: n.value,
       width: d.value,
       height: c.value,
-      isDragging: f.value,
-      isResizing: z.value,
-      activeEdges: b.value
+      isDragging: v.value,
+      isResizing: m.value,
+      activeEdges: y.value
     })), A = () => ({
       onDrag: (e) => {
-        switch (s.value = e.left, n.value = e.top, f.value = e.type === "dragstart" ? !0 : e.type === "dragend" ? !1 : f.value, e.type) {
+        switch (r.value = e.left, n.value = e.top, v.value = e.type === "dragstart" ? !0 : e.type === "dragend" ? !1 : v.value, e.type) {
           case "dragstart":
-            u("dragStart", e);
+            f("dragStart", e);
             break;
           case "dragmove":
-            u("dragMove", e);
+            f("dragMove", e);
             break;
           case "dragend":
-            u("dragEnd", e);
+            f("dragEnd", e);
             break;
         }
       },
       onResize: (e) => {
-        switch (d.value = e.width, c.value = e.height, s.value = e.left, n.value = e.top, z.value = e.type === "resizestart" ? !0 : e.type === "resizeend" ? !1 : z.value, b.value = e.edges || {}, e.type) {
+        switch (d.value = e.width, c.value = e.height, r.value = e.left, n.value = e.top, m.value = e.type === "resizestart" ? !0 : e.type === "resizeend" ? !1 : m.value, y.value = e.edges || {}, e.type) {
           case "resizestart":
-            u("resizeStart", e);
+            f("resizeStart", e);
             break;
           case "resizemove":
-            u("resizeMove", e);
+            f("resizeMove", e);
             break;
           case "resizeend":
-            u("resizeEnd", e);
+            f("resizeEnd", e);
             break;
         }
       }
@@ -64,15 +64,15 @@ const $ = /* @__PURE__ */ C({
       y: t.initialY,
       width: t.initialWidth,
       height: t.initialHeight
-    })), y = () => {
+    })), h = () => {
       if (!a.value) return;
       a.value.setAttribute("data-x", t.initialX.toString()), a.value.setAttribute("data-y", t.initialY.toString()), a.value.setAttribute("data-width", t.initialWidth.toString()), a.value.setAttribute("data-height", t.initialHeight.toString());
-      const e = A(), i = Y(
+      const e = A(), i = q(
         a.value,
         B.value,
         e
       );
-      r = i.cleanup, p = i.updatePositionAndSize, h = i.updatePosition, m = i.updateSize;
+      s = i.cleanup, g = i.updatePositionAndSize, b = i.updatePosition, z = i.updateSize;
     };
     o.push(
       k(
@@ -83,7 +83,7 @@ const $ = /* @__PURE__ */ C({
           () => t.resizeOptions
         ],
         () => {
-          r && (r(), r = null), y();
+          s && (s(), s = null), h();
         },
         {
           deep: t.watchDeep,
@@ -98,31 +98,31 @@ const $ = /* @__PURE__ */ C({
           () => t.initialWidth,
           () => t.initialHeight
         ],
-        ([e, i, g, v]) => {
-          p && (p(e, i, g, v), s.value = e, n.value = i, d.value = g, c.value = v);
+        ([e, i, u, p]) => {
+          g && (g(e, i, u, p), typeof e == "number" && (r.value = e), typeof i == "number" && (n.value = i), typeof u == "number" && (d.value = u), typeof p == "number" && (c.value = p));
         }
       )
     ), M(() => {
-      y();
+      h();
     });
-    const D = (e, i, g, v) => {
-      p && (p(e, i, g, v), s.value = e, n.value = i, d.value = g, c.value = v);
+    const D = (e, i, u, p) => {
+      g && (g(e, i, u, p), typeof e == "number" && (r.value = e), typeof i == "number" && (n.value = i), typeof u == "number" && (d.value = u), typeof p == "number" && (c.value = p));
     }, x = (e, i) => {
-      h && (h(e, i), s.value = e, n.value = i);
+      b && (b(e, i), typeof e == "number" && (r.value = e), typeof i == "number" && (n.value = i));
     }, _ = (e, i) => {
-      m && (m(e, i), d.value = e, c.value = i);
+      z && (z(e, i), typeof e == "number" && (d.value = e), typeof i == "number" && (c.value = i));
     };
     return F(() => {
-      r && (r(), r = null), o != null && o.length && (o.forEach((e) => e()), o.length = 0), p = null, h = null, m = null;
+      s && (s(), s = null), o != null && o.length && (o.forEach((e) => e()), o.length = 0), g = null, b = null, z = null;
     }), O({
       elementRef: a,
-      x: s,
+      x: r,
       y: n,
       width: d,
       height: c,
-      isDragging: f,
-      isResizing: z,
-      activeEdges: b,
+      isDragging: v,
+      isResizing: m,
+      activeEdges: y,
       updatePositionAndSize: D,
       updatePosition: x,
       updateSize: _
@@ -131,11 +131,11 @@ const $ = /* @__PURE__ */ C({
       ref: a,
       class: "draggable-resizable-wrapper"
     }, [
-      H(e.$slots, "default", W(X(R.value)))
+      U(e.$slots, "default", $(j(R.value)))
     ], 512));
   }
 });
 export {
-  $ as default
+  J as default
 };
 //# sourceMappingURL=DraggableResizableWrapper.vue.mjs.map

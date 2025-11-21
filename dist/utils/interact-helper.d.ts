@@ -94,14 +94,14 @@ export interface ElementDragResizeOptions {
     resizeOptions?: ResizeOptions;
     /** 是否使用CSS transform进行定位 */
     useCssTransforms?: boolean;
-    /** 初始元素顶部位置 */
-    x?: number;
-    /** 初始元素左侧位置 */
-    y?: number;
-    /** 初始元素宽度 */
-    width?: number;
-    /** 初始元素高度 */
-    height?: number;
+    /** 初始元素顶部位置 (支持数字或CSS单位) */
+    x?: number | string;
+    /** 初始元素左侧位置 (支持数字或CSS单位) */
+    y?: number | string;
+    /** 初始元素宽度 (支持数字或CSS单位) */
+    width?: number | string;
+    /** 初始元素高度 (支持数字或CSS单位) */
+    height?: number | string;
 }
 /**
  * 拖拽事件回调数据
@@ -154,12 +154,12 @@ export interface ElementDragResizeCallbacks {
 export interface DraggableResizableResult {
     /** 清理函数，用于卸载拖拽和调整大小功能 */
     cleanup: () => void;
-    /** 同时更新位置和尺寸的方法 */
-    updatePositionAndSize: (x: number, y: number, width: number, height: number) => void;
-    /** 仅更新位置的方法 */
-    updatePosition: (x: number, y: number) => void;
-    /** 仅更新尺寸的方法 */
-    updateSize: (width: number, height: number) => void;
+    /** 同时更新位置和尺寸的方法 (支持数字或CSS单位) */
+    updatePositionAndSize: (x: number | string, y: number | string, width: number | string, height: number | string) => void;
+    /** 仅更新位置的方法 (支持数字或CSS单位) */
+    updatePosition: (x: number | string, y: number | string) => void;
+    /** 仅更新尺寸的方法 (支持数字或CSS单位) */
+    updateSize: (width: number | string, height: number | string) => void;
 }
 /**
  * 创建元素拖拽调整大小功能

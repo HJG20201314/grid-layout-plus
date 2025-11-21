@@ -28,9 +28,9 @@ declare const __VLS_component: import('vue').DefineComponent<DraggableResizableW
     isDragging: import('vue').Ref<boolean>;
     isResizing: import('vue').Ref<boolean>;
     activeEdges: import('vue').Ref<Record<string, boolean>>;
-    updatePositionAndSize: (x: number, y: number, width: number, height: number) => void;
-    updatePosition: (x: number, y: number) => void;
-    updateSize: (width: number, height: number) => void;
+    updatePositionAndSize: (x: number | string, y: number | string, width: number | string, height: number | string) => void;
+    updatePosition: (x: number | string, y: number | string) => void;
+    updateSize: (width: number | string, height: number | string) => void;
 }, {}, {}, {}, import('vue').ComponentOptionsMixin, import('vue').ComponentOptionsMixin, {
     dragStart: (data: DragEventCallbackData) => any;
     dragMove: (data: DragEventCallbackData) => any;
@@ -51,10 +51,10 @@ declare const __VLS_component: import('vue').DefineComponent<DraggableResizableW
     useCssTransforms: boolean;
     dragOptions: import('..').DragOptions;
     resizeOptions: import('..').ResizeOptions;
-    initialX: number;
-    initialY: number;
-    initialWidth: number;
-    initialHeight: number;
+    initialX: number | string;
+    initialY: number | string;
+    initialWidth: number | string;
+    initialHeight: number | string;
     watchDeep: boolean;
     watchImmediate: boolean;
 }, {}, {}, {}, string, import('vue').ComponentProvideOptions, false, {
