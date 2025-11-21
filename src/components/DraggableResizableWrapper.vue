@@ -14,6 +14,8 @@ import {
   watch, 
 } from 'vue'
 
+import { throttle } from '@vexip-ui/utils'
+
 import {
   type DraggableResizableWrapperEmits,
   type DraggableResizableWrapperExposed,
@@ -55,13 +57,16 @@ const emit = defineEmits<DraggableResizableWrapperEmits>()
 const elementRef = ref<HTMLElement>()
 
 /** 恢复丢失的响应式状态定义 (位置/尺寸 + 交互状态) */
+// 位置和尺寸保持响应式
 const x = ref<number>(typeof props.initialX === 'number' ? props.initialX : 0)
 const y = ref<number>(typeof props.initialY === 'number' ? props.initialY : 0)
 const width = ref<number>(typeof props.initialWidth === 'number' ? props.initialWidth : 200)
 const height = ref<number>(typeof props.initialHeight === 'number' ? props.initialHeight : 150)
-const isDragging = ref<boolean>(false)
-const isResizing = ref<boolean>(false)
-const activeEdges = ref<Partial<ElementEdges>>({})
+
+// 临时状态使用非响应式变量以提高性能
+let isDragging = false
+let isResizing = false
+let activeEdges: Partial<ElementEdges> = {}
 
 /** 清理函数引用 */
 let cleanupFunction: (() => void) | null = null
@@ -80,59 +85,71 @@ const slotScope: ComputedRef<DraggableResizableWrapperSlotScope> = computed(() =
   y: y.value,
   width: width.value,
   height: height.value,
-  isDragging: isDragging.value,
-  isResizing: isResizing.value,
-  activeEdges: activeEdges.value as Record<string, boolean>,
+  isDragging: isDragging,
+  isResizing: isResizing,
+  activeEdges: activeEdges as Record<string, boolean>,
 }))
 
 /** 创建拖拽和调整大小的回调函数 */
 const createCallbacks = (): ElementDragResizeCallbacks => ({
   onDrag: (data: DragEventCallbackData) => {
-    // 更新内部状态
-    x.value = data.left
-    y.value = data.top
-    isDragging.value =
-      data.type === 'dragstart' ? true : data.type === 'dragend' ? false : isDragging.value
-
-    // 发出对应事件
-    switch (data.type) {
-      case 'dragstart':
-        emit('dragStart', data)
-        break
-      case 'dragmove':
+    // 性能优化：对于dragmove事件，使用requestAnimationFrame减少响应式更新频率
+    if (data.type === 'dragmove') {
+      requestAnimationFrame(() => {
+        // 更新内部状态
+        x.value = data.left
+        y.value = data.top
+        
+        // 发出事件
         emit('dragMove', data)
-        break
-      case 'dragend':
+      })
+    } else {
+      // 对于dragstart和dragend，立即更新
+      if (data.type === 'dragstart') {
+        isDragging = true
+        emit('dragStart', data)
+      } else if (data.type === 'dragend') {
+        isDragging = false
         emit('dragEnd', data)
-        break
+      }
+      // 无论哪种类型，都更新位置
+      x.value = data.left
+      y.value = data.top
     }
   },
   onResize: (data: ResizeEventCallbackData) => {
-    // 更新内部状态
-    width.value = data.width
-    height.value = data.height
-    x.value = data.left
-    y.value = data.top
-    isResizing.value =
-      data.type === 'resizestart' ? true : data.type === 'resizeend' ? false : isResizing.value
-    activeEdges.value = data.edges || {}
-
-    // 发出对应事件
-    switch (data.type) {
-      case 'resizestart':
-        emit('resizeStart', data)
-        break
-      case 'resizemove':
+    // 性能优化：对于resizemove事件，使用requestAnimationFrame减少响应式更新频率
+    if (data.type === 'resizemove') {
+      requestAnimationFrame(() => {
+        // 更新内部状态
+        width.value = data.width
+        height.value = data.height
+        x.value = data.left
+        y.value = data.top
+        
+        // 发出事件
         emit('resizeMove', data)
-        break
-      case 'resizeend':
+      })
+    } else {
+      // 对于resizestart和resizeend，立即更新
+      if (data.type === 'resizestart') {
+        isResizing = true
+        emit('resizeStart', data)
+      } else if (data.type === 'resizeend') {
+        isResizing = false
         emit('resizeEnd', data)
-        break
+      }
+      // 无论哪种类型，都更新位置和尺寸
+      width.value = data.width
+      height.value = data.height
+      x.value = data.left
+      y.value = data.top
+      activeEdges = data.edges || {}
     }
   },
 })
 
-/** 计算选项 */
+/** 计算选项 - 已使用computed属性缓存计算结果，避免每次渲染都重新创建对象 */
 const computedOptions: ComputedRef<ElementDragResizeOptions> = computed(() => ({
   draggable: props.draggable,
   resizable: props.resizable,
@@ -223,7 +240,7 @@ onMounted((): void => {
 })
 
 /** 公开方法：更新位置和尺寸 */
-const updatePositionAndSize = (newX: number | string, newY: number | string, newWidth: number | string, newHeight: number | string): void => {
+const updatePositionAndSize = throttle((newX: number | string, newY: number | string, newWidth: number | string, newHeight: number | string): void => {
   if (updatePositionAndSizeFunction) {
     updatePositionAndSizeFunction(newX, newY, newWidth, newHeight)
     if (typeof newX === 'number') x.value = newX
@@ -231,25 +248,25 @@ const updatePositionAndSize = (newX: number | string, newY: number | string, new
     if (typeof newWidth === 'number') width.value = newWidth
     if (typeof newHeight === 'number') height.value = newHeight
   }
-}
+}, 16)
 
 /** 公开方法：更新位置 */
-const updatePosition = (newX: number | string, newY: number | string): void => {
+const updatePosition = throttle((newX: number | string, newY: number | string): void => {
   if (updatePositionFunction) {
     updatePositionFunction(newX, newY)
     if (typeof newX === 'number') x.value = newX
     if (typeof newY === 'number') y.value = newY
   }
-}
+}, 16)
 
 /** 公开方法：更新尺寸 */
-const updateSize = (newWidth: number | string, newHeight: number | string): void => {
+const updateSize = throttle((newWidth: number | string, newHeight: number | string): void => {
   if (updateSizeFunction) {
     updateSizeFunction(newWidth, newHeight)
     if (typeof newWidth === 'number') width.value = newWidth
     if (typeof newHeight === 'number') height.value = newHeight
   }
-}
+}, 16)
 
 /** 组件卸载时清理 */
 onUnmounted((): void => {

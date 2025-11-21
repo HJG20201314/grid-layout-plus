@@ -60,9 +60,9 @@ export interface DraggableResizableWrapperExposed {
   width: Ref<number>,
   height: Ref<number>,
   // 当前状态 - 交互状态 (Ref 类型)
-  isDragging: Ref<boolean>,
-  isResizing: Ref<boolean>,
-  activeEdges: Ref<Record<string, boolean>>,
+  isDragging: boolean,
+  isResizing: boolean,
+  activeEdges: Record<string, boolean>,
   // 更新方法
   updatePositionAndSize: (x: number | string, y: number | string, width: number | string, height: number | string) => void,
   updatePosition: (x: number | string, y: number | string) => void,
