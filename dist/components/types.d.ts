@@ -1,5 +1,5 @@
 import { Breakpoints, Layout, ResponsiveLayout } from '../helpers/types';
-import { DragEventCallbackData, ElementDragResizeOptions, ResizeEventCallbackData } from '../utils/interact-helper';
+import { DragEventCallbackData, ElementDragResizeOptions, ElementEdges, ResizeEventCallbackData } from '../utils/interact-helper';
 import { Ref } from 'vue';
 /**
  * DraggableResizableWrapper 组件 Props 类型定义
@@ -38,7 +38,7 @@ export interface DraggableResizableWrapperSlotScope {
     height: number;
     isDragging: boolean;
     isResizing: boolean;
-    activeEdges: Record<string, boolean>;
+    activeEdges: Partial<ElementEdges>;
 }
 /**
  * DraggableResizableWrapper 组件暴露的方法类型定义
@@ -49,9 +49,9 @@ export interface DraggableResizableWrapperExposed {
     y: Ref<number>;
     width: Ref<number>;
     height: Ref<number>;
-    isDragging: boolean;
-    isResizing: boolean;
-    activeEdges: Record<string, boolean>;
+    isDragging: Ref<boolean>;
+    isResizing: Ref<boolean>;
+    activeEdges: Ref<Partial<ElementEdges>>;
     updatePositionAndSize: (x: number | string, y: number | string, width: number | string, height: number | string) => void;
     updatePosition: (x: number | string, y: number | string) => void;
     updateSize: (width: number | string, height: number | string) => void;

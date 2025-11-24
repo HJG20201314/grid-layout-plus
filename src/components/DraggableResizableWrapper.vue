@@ -63,10 +63,10 @@ const y = ref<number>(typeof props.initialY === 'number' ? props.initialY : 0)
 const width = ref<number>(typeof props.initialWidth === 'number' ? props.initialWidth : 200)
 const height = ref<number>(typeof props.initialHeight === 'number' ? props.initialHeight : 150)
 
-// 临时状态使用非响应式变量以提高性能
-let isDragging = false
-let isResizing = false
-let activeEdges: Partial<ElementEdges> = {}
+// 定义组件内部状态 - 全部使用响应式变量确保外部可以实时访问
+const isDragging = ref<boolean>(false)
+const isResizing = ref<boolean>(false)
+const activeEdges = ref<Partial<ElementEdges>>({})
 
 /** 清理函数引用 */
 let cleanupFunction: (() => void) | null = null
@@ -85,9 +85,9 @@ const slotScope: ComputedRef<DraggableResizableWrapperSlotScope> = computed(() =
   y: y.value,
   width: width.value,
   height: height.value,
-  isDragging: isDragging,
-  isResizing: isResizing,
-  activeEdges: activeEdges as Record<string, boolean>,
+  isDragging: isDragging.value,
+  isResizing: isResizing.value,
+  activeEdges: activeEdges.value as Record<string, boolean>,
 }))
 
 /** 创建拖拽和调整大小的回调函数 */
@@ -106,10 +106,10 @@ const createCallbacks = (): ElementDragResizeCallbacks => ({
     } else {
       // 对于dragstart和dragend，立即更新
       if (data.type === 'dragstart') {
-        isDragging = true
+        isDragging.value = true
         emit('dragStart', data)
       } else if (data.type === 'dragend') {
-        isDragging = false
+        isDragging.value = false
         emit('dragEnd', data)
       }
       // 无论哪种类型，都更新位置
@@ -133,10 +133,10 @@ const createCallbacks = (): ElementDragResizeCallbacks => ({
     } else {
       // 对于resizestart和resizeend，立即更新
       if (data.type === 'resizestart') {
-        isResizing = true
+        isResizing.value = true
         emit('resizeStart', data)
       } else if (data.type === 'resizeend') {
-        isResizing = false
+        isResizing.value = false
         emit('resizeEnd', data)
       }
       // 无论哪种类型，都更新位置和尺寸
@@ -144,7 +144,7 @@ const createCallbacks = (): ElementDragResizeCallbacks => ({
       height.value = data.height
       x.value = data.left
       y.value = data.top
-      activeEdges = data.edges || {}
+      activeEdges.value = data.edges || {}
     }
   },
 })
