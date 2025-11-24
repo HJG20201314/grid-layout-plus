@@ -1049,12 +1049,12 @@ export function makeElementDraggableResizable(
         // transform只能使用像素值
         element.style.transform = `translate(${cachedX}px, ${cachedY}px)`
       } else if (isAbsoluteOrFixed) {
-        if (!isRightPositioned() && !isLeftPositioned()) {
-          setLeft(newX)
-        }
-        if (!isTopPositioned() && !isBottomPositioned()) {
-          setTop(newY)
-        }
+        element.style.right = ''
+        element.style.bottom = ''
+        
+        // 无论是否已设置left/top，都强制更新位置
+        setLeft(newX)
+        setTop(newY)
       } else {
         element.style.transform = `translate(${cachedX}px, ${cachedY}px)`
       }
