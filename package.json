@@ -1,6 +1,6 @@
 {
   "name": "grid-layout-plus",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "type": "module",
   "packageManager": "pnpm@9.14.2",
   "license": "MIT",
@@ -14,7 +14,7 @@
     "lint": "eslint --cache \"**/*.{js,cjs,mjs,ts,tsx,vue}\"",
     "lint:style": "stylelint --cache \"**/*.{vue,scss}\"",
     "precommit": "lint-staged -c ./.husky/.lintstagedrc -q",
-    "prepare": "husky",
+    "prepare": "is-ci || husky init",
     "prepublishOnly": "pinst --disable",
     "prettier": "prettier --write \"{src,dev-server,docs}/**/*.{ts,js,json,css,pcss,scss,vue,html,md}\"",
     "prettier:scripts": "prettier --write \"scripts/**/*.{ts,js,json}\"",
@@ -72,6 +72,7 @@
     "lib",
     "src",
     "CHANGELOG.md",
+    "types.d.ts",
     "package.json"
   ],
   "keywords": [
