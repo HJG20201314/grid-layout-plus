@@ -299,7 +299,7 @@ const handleResizeEnd = (data) => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease;
 }
 
 .my-card.dragging {

@@ -1,27 +1,130 @@
-# Grid Layout Plus
+# grid-layout-plus--hjg
+
+一个高性能的 Vue 3 网格布局组件库，支持拖拽、调整大小和响应式布局。
 
 Grid Layout Plus 是一个基于 Vue 3 的灵活、响应式的网格布局系统，支持拖拽、调整大小、响应式布局等功能。
 
+## 安装
+
+```
+
+### 从 GitHub 仓库安装
+
+```bash
+# 使用 npm
+npm install git+https://github.com/HJG20201314/grid-layout-plus.git
+
+# 使用 pnpm
+pnpm add git+https://github.com/HJG20201314/grid-layout-plus.git
+
+# 使用 yarn
+yarn add git+https://github.com/HJG20201314/grid-layout-plus.git
+
+# 或者指定特定的分支或标签
+npm install git+https://github.com/HJG20201314/grid-layout-plus.git#main
+npm install git+https://github.com/HJG20201314/grid-layout-plus.git#v1.0.6
+```
+
+> **注意**: 请将 `HJG20201314` 替换为实际的 GitHub 用户名或组织名。例如：`https://github.com/hjg-grid/grid-layout-plus.git`
+
+### ⚠️ 重要提示
+
+从 GitHub 仓库安装时，由于构建产物（`dist`、`es`、`lib` 目录）默认不会包含在仓库中，您需要手动构建：
+
+```bash
+# 进入包目录
+cd node_modules/grid-layout-plus
+
+# 安装依赖
+pnpm install
+
+# 构建项目
+pnpm run build
+```
+
+或者使用自动构建（推荐）：
+
+```bash
+# 包会自动检测并构建（需要等待一段时间）
+```
+
+**🔧 如果遇到安装问题（得到旧版本），请清除 pnpm 缓存：**
+
+```bash
+# 清除 pnpm 缓存
+pnpm store prune
+
+# 重新安装
+pnpm remove grid-layout-plus
+pnpm add git+https://github.com/HJG20201314/grid-layout-plus.git
+```
+
+### 在 package.json 中使用
+
+```json
+{
+  "dependencies": {
+    "grid-layout-plus--hjg": "git+https://github.com/HJG20201314/grid-layout-plus.git"
+  }
+}
+```
+
 ## 项目结构
+
+### 根目录结构
+
+```
+grid-layout-plus--hjg/
+├── src/                    # 源代码目录
+├── docs/                   # VitePress 文档
+├── tests/                  # 测试文件
+├── dev-server/             # 开发服务器
+├── scripts/                # 构建和发布脚本
+├── .github/                # GitHub Actions 工作流
+├── dist/                   # 构建输出目录
+├── lib/                    # CommonJS 构建输出
+├── es/                     # ES modules 构建输出
+├── CHANGELOG.md            # 更新日志
+├── README.md               # 主文档
+└── package.json            # 包配置
+```
+
+### 文档结构
+
+```
+docs/
+├── .vitepress/             # VitePress 配置
+├── demos/                  # 演示组件
+├── example/                # 示例文档
+├── guide/                  # 使用指南
+├── public/                 # 静态资源
+├── zh/                     # 中文文档
+└── index.md                # 文档首页
+```
+
+### 源代码结构
 
 ```
 src/
 ├── components/         # 核心组件
-│   ├── grid-layout.vue # 网格布局容器组件
-│   ├── grid-item.vue   # 网格布局项目组件
-│   └── types.ts        # 组件类型定义
-├── helpers/            # 辅助函数
-│   ├── common.ts       # 通用功能和布局计算
-│   ├── dom.ts          # DOM 操作相关
-│   ├── draggable.ts    # 拖拽功能
-│   ├── responsive.ts   # 响应式布局
-│   └── types.ts        # 辅助函数类型定义
-├── utils/              # 工具函数
-│   ├── index.ts        # 工具入口
+│   ├── grid-layout.vue   # 网格布局容器组件
+│   ├── grid-item.vue     # 网格布局项目组件
+│   ├── DraggableResizableWrapper.vue # 拖拽调整大小包装组件
+│   ├── DraggableResizableWrapper.md  # 拖拽调整大小组件文档
+│   └── types.ts          # 组件类型定义
+├── helpers/              # 辅助函数
+│   ├── common.ts         # 通用功能和布局计算
+│   ├── dom.ts            # DOM 操作相关
+│   ├── draggable.ts      # 拖拽功能
+│   ├── responsive.ts     # 响应式布局
+│   └── types.ts          # 辅助函数类型定义
+├── utils/                # 工具函数
+│   ├── index.ts          # 工具入口
 │   └── interact-helper.ts # 拖拽调整大小核心实现
-├── index.ts            # 项目入口
-├── style.scss          # 样式文件
-└── global.d.ts         # 全局类型声明
+├── index.ts              # 项目入口
+├── style.scss            # 样式文件
+├── global.d.ts           # 全局类型声明
+└── READEME.md            # 项目文档
 ```
 
 ## 核心组件
@@ -232,20 +335,32 @@ function layoutUpdated(newLayout: any[]) {
     :responsive-layouts="responsiveLayouts"
     @breakpoint-changed="onBreakpointChange"
   >
-    <!-- GridItems -->
+    <GridItem
+      v-for="item in layout"
+      :key="item.i"
+      :x="item.x"
+      :y="item.y"
+      :w="item.w"
+      :h="item.h"
+      :i="item.i"
+    >
+      {{ item.i }}
+    </GridItem>
   </GridLayout>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { GridLayout } from 'grid-layout-plus--hjg'
+import { GridItem, GridLayout } from 'grid-layout-plus--hjg'
 
 const layout = ref([])
 const responsiveLayouts = ref({
   lg: [{ x: 0, y: 0, w: 2, h: 2, i: '0' }],
   md: [{ x: 0, y: 0, w: 2, h: 2, i: '0' }],
-  // 其他断点的布局...
+  sm: [{ x: 0, y: 0, w: 2, h: 2, i: '0' }],
+  xs: [{ x: 0, y: 0, w: 2, h: 2, i: '0' }],
+  xxs: [{ x: 0, y: 0, w: 2, h: 2, i: '0' }],
 })
 
 function onBreakpointChange(breakpoint: string) {

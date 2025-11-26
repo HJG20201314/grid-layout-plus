@@ -1,5 +1,7 @@
 # Installation
 
+## From npm registry
+
 Using `pnpm` (Recommended):
 
 ```sh
@@ -10,6 +12,60 @@ Using `yarn`:
 
 ```sh
 yarn add grid-layout-plus
+```
+
+## From GitHub repository
+
+Using `pnpm`:
+
+```sh
+pnpm add git+https://github.com/HJG20201314/grid-layout-plus.git
+```
+
+Using `yarn`:
+
+```sh
+yarn add git+https://github.com/HJG20201314/grid-layout-plus.git
+```
+
+Using `npm`:
+
+```sh
+npm install git+https://github.com/HJG20201314/grid-layout-plus.git
+```
+
+### ⚠️ Important Notes for GitHub Installation
+
+When installing from GitHub, the build artifacts (`dist`, `es`, `lib` directories) are not included in the repository. The package will automatically build during installation, but if you encounter issues (getting old versions), please clear your package manager cache:
+
+**For pnpm:**
+```sh
+# Clear pnpm cache
+pnpm store prune
+
+# Reinstall
+pnpm remove grid-layout-plus
+pnpm add git+https://github.com/HJG20201314/grid-layout-plus.git
+```
+
+**For yarn:**
+```sh
+# Clear yarn cache
+yarn cache clean
+
+# Reinstall
+yarn remove grid-layout-plus
+yarn add git+https://github.com/HJG20201314/grid-layout-plus.git
+```
+
+**For npm:**
+```sh
+# Clear npm cache
+npm cache clean --force
+
+# Reinstall
+npm uninstall grid-layout-plus
+npm install git+https://github.com/HJG20201314/grid-layout-plus.git
 ```
 
 ## Import

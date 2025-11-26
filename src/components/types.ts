@@ -2,6 +2,7 @@ import type { Breakpoints, Layout, ResponsiveLayout } from '../helpers/types'
 import type {
   DragEventCallbackData,
   ElementDragResizeOptions,
+  ElementEdges,
   ResizeEventCallbackData,
 } from '../utils/interact-helper'
 import type { Ref } from 'vue'
@@ -15,10 +16,10 @@ export interface DraggableResizableWrapperProps {
   useCssTransforms?: boolean, // 是否使用CSS transform进行定位
   dragOptions?: ElementDragResizeOptions['dragOptions'], // 拖拽配置选项
   resizeOptions?: ElementDragResizeOptions['resizeOptions'], // 调整大小配置选项
-  initialX?: number, // 初始X坐标
-  initialY?: number, // 初始Y坐标
-  initialWidth?: number, // 初始宽度
-  initialHeight?: number, // 初始高度
+  initialX?: number | string, // 初始X坐标 支持CSS单位
+  initialY?: number | string, // 初始Y坐标 支持CSS单位
+  initialWidth?: number | string, // 初始宽度 支持CSS单位
+  initialHeight?: number | string, // 初始高度 支持CSS单位
   watchDeep?: boolean, // watch监听器的deep配置
   watchImmediate?: boolean // watch监听器的immediate配置
 }
@@ -45,7 +46,7 @@ export interface DraggableResizableWrapperSlotScope {
   height: number, // 当前高度
   isDragging: boolean, // 是否正在拖拽
   isResizing: boolean, // 是否正在调整大小
-  activeEdges: Record<string, boolean> // 当前激活的边缘
+  activeEdges: Partial<ElementEdges> // 当前激活的边缘
 }
 
 /**
@@ -62,11 +63,11 @@ export interface DraggableResizableWrapperExposed {
   // 当前状态 - 交互状态 (Ref 类型)
   isDragging: Ref<boolean>,
   isResizing: Ref<boolean>,
-  activeEdges: Ref<Record<string, boolean>>,
+  activeEdges: Ref<Partial<ElementEdges>>,
   // 更新方法
-  updatePositionAndSize: (x: number, y: number, width: number, height: number) => void,
-  updatePosition: (x: number, y: number) => void,
-  updateSize: (width: number, height: number) => void
+  updatePositionAndSize: (x: number | string, y: number | string, width: number | string, height: number | string) => void,
+  updatePosition: (x: number | string, y: number | string) => void,
+  updateSize: (width: number | string, height: number | string) => void
 }
 
 export interface GridLayoutProps {

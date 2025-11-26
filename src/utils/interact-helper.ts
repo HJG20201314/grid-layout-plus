@@ -1,7 +1,10 @@
 import interact from 'interactjs'
 import { throttle } from '@vexip-ui/utils'
 
+import { isCssUnitValue, parseCssSize, parsePositionValue } from './css-units'
+
 import type { DragEvent, Interactable, ResizeEvent } from '@interactjs/types'
+
 
 /** 扩展Element类型以支持_dataUpdateTimer属性和事件监听器引用 */
 declare global {
@@ -109,14 +112,14 @@ export interface ElementDragResizeOptions {
   resizeOptions?: ResizeOptions,
   /** 是否使用CSS transform进行定位 */
   useCssTransforms?: boolean,
-  /** 初始元素顶部位置 */
-  x?: number,
-  /** 初始元素左侧位置 */
-  y?: number,
-  /** 初始元素宽度 */
-  width?: number,
-  /** 初始元素高度 */
-  height?: number
+  /** 初始元素顶部位置 (支持数字或CSS单位) */
+  x?: number | string,
+  /** 初始元素左侧位置 (支持数字或CSS单位) */
+  y?: number | string,
+  /** 初始元素宽度 (支持数字或CSS单位) */
+  width?: number | string,
+  /** 初始元素高度 (支持数字或CSS单位) */
+  height?: number | string
 }
 
 /**
@@ -173,12 +176,12 @@ export interface ElementDragResizeCallbacks {
 export interface DraggableResizableResult {
   /** 清理函数，用于卸载拖拽和调整大小功能 */
   cleanup: () => void,
-  /** 同时更新位置和尺寸的方法 */
-  updatePositionAndSize: (x: number, y: number, width: number, height: number) => void,
-  /** 仅更新位置的方法 */
-  updatePosition: (x: number, y: number) => void,
-  /** 仅更新尺寸的方法 */
-  updateSize: (width: number, height: number) => void
+  /** 同时更新位置和尺寸的方法 (支持数字或CSS单位) */
+  updatePositionAndSize: (x: number | string, y: number | string, width: number | string, height: number | string) => void,
+  /** 仅更新位置的方法 (支持数字或CSS单位) */
+  updatePosition: (x: number | string, y: number | string) => void,
+  /** 仅更新尺寸的方法 (支持数字或CSS单位) */
+  updateSize: (width: number | string, height: number | string) => void
 }
 
 /**
@@ -236,7 +239,12 @@ export function makeElementDraggableResizable(
   const initialY = getData('y', '0')
   const initialWidth = getData('width', width.toString())
   const initialHeight = getData('height', height.toString())
-  
+
+  // 使用解析后的初始缓存值 (内部统一使用像素值计算)
+  let cachedX = parsePositionValue(initialX, element, 'x')
+  let cachedY = parsePositionValue(initialY, element, 'y')
+  let cachedWidth = parseCssSize(initialWidth, element, 'width')
+  let cachedHeight = parseCssSize(initialHeight, element, 'height')
 
   /** 创建拖拽线元素 */
   const resizeLines = new Map<string, HTMLElement>()
@@ -271,11 +279,8 @@ export function makeElementDraggableResizable(
   /** 检查元素是否为底部定位 */
   const isBottomPositioned = () => isPositioned('bottom')
 
-  /** 共享的缓存变量 - 这是修复translate被重置问题的关键，所有功能使用相同的坐标缓存，确保状态一致性 */
-  let cachedX = parseFloat(initialX)
-  let cachedY = parseFloat(initialY)
-  let cachedWidth = parseFloat(initialWidth)
-  let cachedHeight = parseFloat(initialHeight)
+  /** 共享的缓存变量 - 使用已解析的 cachedX/cachedY/cachedWidth/cachedHeight (CSS单位已转换为像素) */
+  // (已在上方通过 parsePositionValue 与 parseCssSize 初始化, 这里不再重复声明)
 
   /** 设置拖拽边的hover状态 */
   const setEdgeActive = (edges: Partial<ElementEdges>) => {
@@ -438,39 +443,26 @@ export function makeElementDraggableResizable(
       if (event.target instanceof HTMLElement) {
         const computedStyle = getComputedStyle(event.target)
         const isAbsoluteOrFixed = computedStyle.position === 'absolute' || computedStyle.position === 'fixed'
-        console.log('cachedX:', cachedX)
-        console.log('cachedY:', cachedY)
 
         if (useCssTransforms && !isAbsoluteOrFixed) {
           // 对于非绝对/固定定位元素，使用transform
           event.target.style.transform = `translate(${cachedX}px, ${cachedY}px)`
         } else if (isAbsoluteOrFixed) {
-          console.log('Using direct positioning for absolute/fixed element')
-          console.log('isRightPositioned:', isRightPositioned())
-          console.log('isLeftPositioned:', isLeftPositioned())
-          console.log('isTopPositioned:', isTopPositioned())
-          console.log('isBottomPositioned:', isBottomPositioned())
           // 对于绝对/固定定位元素，使用直接定位
           // 优先级：left > right, top > bottom
           if (isLeftPositioned()) {
-            console.log('Updating left position (existing left positioning)')
             event.target.style.left = `${cachedX}px`
           } else if (!isRightPositioned()) {
-            console.log('Updating left position (no conflicting positioning)')
             event.target.style.left = `${cachedX}px`
           } else if (isRightPositioned()) {
-            console.log('Updating right position (existing right positioning)')
             event.target.style.right = `${-cachedX}px`
           }
           
           if (isTopPositioned()) {
-            console.log('Updating top position (existing top positioning)')
             event.target.style.top = `${cachedY}px`
           } else if (!isBottomPositioned()) {
-            console.log('Updating top position (no conflicting positioning)')
             event.target.style.top = `${cachedY}px`
           } else if (isBottomPositioned()) {
-            console.log('Updating bottom position (existing bottom positioning)')
             event.target.style.bottom = `${-cachedY}px`
           }
         } else {
@@ -490,7 +482,7 @@ export function makeElementDraggableResizable(
         }, 50)
       }
 
-      // 如果有回调，使用requestAnimationFrame异步处理以提高性能
+      // 如果有回调，使用requestAnimationFrame异态处理以提高性能
       if (callbacks?.onDrag) {
         requestAnimationFrame(() => {
           callbacks.onDrag?.({
@@ -557,65 +549,6 @@ export function makeElementDraggableResizable(
     interactable.draggable(draggableConfig)
   }
 
-  // 解析CSS尺寸值为像素值的辅助函数
-  // 添加direction参数来区分是宽度还是高度的计算
-  const parseCssSize = (
-    size: number | string,
-    element: HTMLElement | SVGElement,
-    direction: 'width' | 'height' = 'width',
-  ): number => {
-    if (typeof size === 'number') {
-      return size
-    }
-
-    // 如果已经是像素值格式，直接解析
-    if (size.endsWith('px')) {
-      return parseFloat(size)
-    }
-
-    // 创建临时元素，使用getComputedStyle来获取实际像素值
-    const temp = document.createElement('div')
-
-    // 基础样式设置，确保准确计算
-    Object.assign(temp.style, {
-      position: 'absolute',
-      visibility: 'hidden', // 保持尺寸但不可见
-      zIndex: '-1000', // 确保元素在页面内容的后面
-      margin: '0',
-      padding: '0',
-      border: 'none',
-      overflow: 'hidden',
-      boxSizing: 'border-box',
-      width: direction === 'width' ? size : 'auto',
-      height: direction === 'height' ? size : 'auto',
-    })
-
-    try {
-      // 获取元素的父容器作为参考
-      const parentNode = element.parentNode
-      const container = parentNode instanceof Node ? parentNode : document.body
-
-      container.appendChild(temp)
-
-      // 使用getComputedStyle获取计算后的像素值
-      // 确保temp是HTMLElement类型以避免TypeScript类型错误
-      const computedStyle = getComputedStyle(temp as HTMLElement)
-      const sizeProperty = direction === 'width' ? 'width' : 'height'
-      const sizeInPixels = parseFloat(computedStyle[sizeProperty])
-
-      // 返回有效尺寸或默认值
-      return isNaN(sizeInPixels) || sizeInPixels <= 0 ? 100 : sizeInPixels
-    } catch (e) {
-      // 如果解析失败，返回默认值
-      return 100
-    } finally {
-      // 确保移除临时元素
-      if (temp.parentNode) {
-        temp.parentNode.removeChild(temp)
-      }
-    }
-  }
-
   // 配置调整大小功能
   if (resizable && resizeOptions) {
     // 创建拖拽线
@@ -658,7 +591,7 @@ export function makeElementDraggableResizable(
       cachedMaxHeight = parseCssSize(resizeOptions?.maxHeight ?? Infinity, event.target, 'height')
       cachedAspectRatio = cachedWidth / cachedHeight
 
-      // 如果有回调，使用requestAnimationFrame异步处理以提高性能
+      // 如果有回调，使用requestAnimationFrame异态处理以提高性能
       if (callbacks?.onResize) {
         requestAnimationFrame(() => {
           callbacks.onResize?.({
@@ -859,7 +792,7 @@ export function makeElementDraggableResizable(
         left: Boolean(event.edges?.left),
       }
 
-      // 如果有回调，使用requestAnimationFrame异步处理以提高性能
+      // 如果有回调，使用requestAnimationFrame异态处理以提高性能
       if (callbacks?.onResize) {
         requestAnimationFrame(() => {
           callbacks.onResize?.({
@@ -982,11 +915,9 @@ export function makeElementDraggableResizable(
     const isAbsoluteOrFixed = computedStyle.position === 'absolute' || computedStyle.position === 'fixed'
     
     if (useCssTransforms && !isAbsoluteOrFixed) {
-      console.log('Using transform for non-absolute/fixed element')
       // 对于非绝对/固定定位元素（如relative或static），使用transform
       element.style.transform = `translate(${cachedX}px, ${cachedY}px)`
     } else if (isAbsoluteOrFixed) {
-      console.log('Using direct positioning for absolute/fixed element')
       // 对于绝对/固定定位元素，使用直接定位
       if (!isRightPositioned() && !isLeftPositioned()) {
         element.style.left = `${cachedX}px`
@@ -1001,61 +932,83 @@ export function makeElementDraggableResizable(
   }
 
   // 更新位置的方法
-  const updatePosition = (newX: number, newY: number) => {
-    // 更新缓存值
-    cachedX = newX
-    cachedY = newY
+  const updatePosition = (newX: number | string, newY: number | string) => {
+    // 将传入值解析为像素用于内部计算
+    cachedX = parsePositionValue(newX, element, 'x')
+    cachedY = parsePositionValue(newY, element, 'y')
 
     // 更新DOM元素的位置
     if (element instanceof HTMLElement) {
       const computedStyle = getComputedStyle(element)
       const isAbsoluteOrFixed = computedStyle.position === 'absolute' || computedStyle.position === 'fixed'
-      
+      const setLeft = (val: number | string) => {
+        if (typeof val === 'string' && isCssUnitValue(val) && isAbsoluteOrFixed) {
+          element.style.left = val
+        } else {
+          element.style.left = `${cachedX}px`
+        }
+      }
+      const setTop = (val: number | string) => {
+        if (typeof val === 'string' && isCssUnitValue(val) && isAbsoluteOrFixed) {
+          element.style.top = val
+        } else {
+          element.style.top = `${cachedY}px`
+        }
+      }
       if (useCssTransforms && !isAbsoluteOrFixed) {
-        // 对于非绝对/固定定位元素，使用transform
-        element.style.transform = `translate(${newX}px, ${newY}px)`
+        // transform只能使用像素值
+        element.style.transform = `translate(${cachedX}px, ${cachedY}px)`
       } else if (isAbsoluteOrFixed) {
-        // 对于绝对/固定定位元素，使用直接定位
-        if (!isRightPositioned() && !isLeftPositioned()) {
-          element.style.left = `${newX}px`
-        }
-        if (!isTopPositioned() && !isBottomPositioned()) {
-          element.style.top = `${newY}px`
-        }
+        element.style.right = ''
+        element.style.bottom = ''
+        
+        // 无论是否已设置left/top，都强制更新位置
+        setLeft(newX)
+        setTop(newY)
       } else {
-        // 对于其他情况，优先使用transform
-        element.style.transform = `translate(${newX}px, ${newY}px)`
+        element.style.transform = `translate(${cachedX}px, ${cachedY}px)`
       }
     }
 
-    // 更新数据属性
+    // 更新数据属性 (保持原始值, 以便再次解析)
     if (element instanceof Element) {
-      element.setAttribute('data-x', newX.toString())
-      element.setAttribute('data-y', newY.toString())
+      element.setAttribute('data-x', typeof newX === 'string' ? newX : cachedX.toString())
+      element.setAttribute('data-y', typeof newY === 'string' ? newY : cachedY.toString())
     }
   }
 
   // 更新尺寸的方法
-  const updateSize = (newWidth: number, newHeight: number) => {
-    // 更新缓存值
-    cachedWidth = newWidth
-    cachedHeight = newHeight
+  const updateSize = (newWidth: number | string, newHeight: number | string) => {
+    cachedWidth = typeof newWidth === 'number' ? newWidth : parseCssSize(newWidth, element, 'width')
+    cachedHeight = typeof newHeight === 'number' ? newHeight : parseCssSize(newHeight, element, 'height')
 
-    // 更新DOM元素的尺寸
     if (element instanceof HTMLElement) {
-      element.style.width = `${newWidth}px`
-      element.style.height = `${newHeight}px`
+      const setWidth = (val: number | string) => {
+        if (typeof val === 'string' && isCssUnitValue(val)) {
+          element.style.width = val
+        } else {
+          element.style.width = `${cachedWidth}px`
+        }
+      }
+      const setHeight = (val: number | string) => {
+        if (typeof val === 'string' && isCssUnitValue(val)) {
+          element.style.height = val
+        } else {
+          element.style.height = `${cachedHeight}px`
+        }
+      }
+      setWidth(newWidth)
+      setHeight(newHeight)
     }
 
-    // 更新数据属性
     if (element instanceof Element) {
-      element.setAttribute('data-width', newWidth.toString())
-      element.setAttribute('data-height', newHeight.toString())
+      element.setAttribute('data-width', typeof newWidth === 'string' ? newWidth : cachedWidth.toString())
+      element.setAttribute('data-height', typeof newHeight === 'string' ? newHeight : cachedHeight.toString())
     }
   }
 
   // 更新位置和大小的方法（组合方法）
-  const updatePositionAndSize = (newX: number, newY: number, newWidth: number, newHeight: number) => {
+  const updatePositionAndSize = (newX: number | string, newY: number | string, newWidth: number | string, newHeight: number | string) => {
     updatePosition(newX, newY)
     updateSize(newWidth, newHeight)
   }
