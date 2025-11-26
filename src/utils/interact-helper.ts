@@ -340,19 +340,19 @@ export function makeElementDraggableResizable(
     const setupHoverEffect = (outerLine: HTMLElement, innerLine: HTMLElement) => {
       /** 鼠标进入时只显示内部线条的背景色 */
       const handleMouseEnter = () => {
-        // outerLine保持透明
+        // outerLine保持透明，只设置内部线条的背景色
         innerLine.style.backgroundColor = 'rgba(29, 98, 236, 1)'
       }
 
       /** 鼠标离开时恢复内部线条透明，但在拖拽过程中不执行 */
       const handleMouseLeave = () => {
         if (!isResizing) {
-          // outerLine保持透明
+          // outerLine保持透明，只设置内部线条的背景色
           innerLine.style.backgroundColor = 'rgba(29, 98, 236, 0)'
         }
       }
 
-      /** 添加事件监听器 */
+      /** 添加事件监听器 - 只在外部线条上添加，内部线条不再需要单独的事件监听 */
       outerLine.addEventListener('mouseenter', handleMouseEnter)
       outerLine.addEventListener('mouseleave', handleMouseLeave)
 
