@@ -95,7 +95,9 @@ export interface ResizeOptions {
   /** 最大宽度 */
   maxWidth?: number | string,
   /** 最大高度 */
-  maxHeight?: number | string
+  maxHeight?: number | string,
+  /** 调整大小热区大小 */
+  hotZoneSize?: number
 }
 
 /**
@@ -205,6 +207,7 @@ export function makeElementDraggableResizable(
     resizeOptions: {
       edges: { top: false, right: false, bottom: false, left: false },
       margin: 8,
+      hotZoneSize: 8,
     },
     x: 0,
     y: 0,
@@ -288,7 +291,11 @@ export function makeElementDraggableResizable(
     ;(['top', 'right', 'bottom', 'left'] as const).forEach(edge => {
       const line = resizeLines.get(edge)
       if (line) {
-        line.style.backgroundColor = edges[edge] ? 'rgba(29, 98, 236, 1)' : 'rgba(29, 98, 236, 0)'
+        // 只处理内部线条的背景色，外部线条保持透明
+        const innerLine = line.firstElementChild as HTMLElement
+        if (innerLine) {
+          innerLine.style.backgroundColor = edges[edge] ? 'rgba(29, 98, 236, 1)' : 'rgba(29, 98, 236, 0)'
+        }
       }
     })
   }
@@ -296,7 +303,11 @@ export function makeElementDraggableResizable(
   /** 重置所有拖拽边的状态 */
   const resetEdgesActive = () => {
     resizeLines.forEach(line => {
-      line.style.backgroundColor = 'rgba(29, 98, 236, 0)'
+      // 只处理内部线条的背景色，外部线条保持透明
+      const innerLine = line.firstElementChild as HTMLElement
+      if (innerLine) {
+        innerLine.style.backgroundColor = 'rgba(29, 98, 236, 0)'
+      }
     })
     activeEdges = {}
   }
@@ -305,98 +316,189 @@ export function makeElementDraggableResizable(
     const edges = resizeOptions?.edges || {}
     // 获取margin值，默认为4
     const margin = resizeOptions?.margin ?? 4
+    // 热区放大尺寸，设置为10px以提高可点击性
+    const hotZoneSize = resizeOptions?.hotZoneSize ?? 10
+    
     const lineStyle = {
       position: 'absolute',
-      backgroundColor: 'rgba(29, 98, 236, 0)', // 初始透明
+      backgroundColor: 'rgba(29, 98, 236, 0)', // 始终保持透明
       pointerEvents: 'auto', // 设置为auto以支持hover效果
+      // 移除transition，因为背景色不会变化
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }
+    
+    // 内部div样式，用于放大热区
+    const innerLineStyle = {
+      backgroundColor: 'rgba(29, 98, 236, 0)', // 初始透明
       transition: 'background-color 0.1s ease',
+      pointerEvents: 'auto',
     }
 
     /** 为线条添加hover效果的函数 */
-    const setupHoverEffect = (line: HTMLElement) => {
-      /** 鼠标进入时显示背景色 */
+    const setupHoverEffect = (outerLine: HTMLElement, innerLine: HTMLElement) => {
+      /** 鼠标进入时只显示内部线条的背景色 */
       const handleMouseEnter = () => {
-        line.style.backgroundColor = 'rgba(29, 98, 236, 1)'
+        // outerLine保持透明
+        innerLine.style.backgroundColor = 'rgba(29, 98, 236, 1)'
       }
 
-      /** 鼠标离开时恢复透明，但在拖拽过程中不执行 */
+      /** 鼠标离开时恢复内部线条透明，但在拖拽过程中不执行 */
       const handleMouseLeave = () => {
         if (!isResizing) {
-          line.style.backgroundColor = 'rgba(29, 98, 236, 0)'
+          // outerLine保持透明
+          innerLine.style.backgroundColor = 'rgba(29, 98, 236, 0)'
         }
       }
 
       /** 添加事件监听器 */
-      line.addEventListener('mouseenter', handleMouseEnter)
-      line.addEventListener('mouseleave', handleMouseLeave)
+      outerLine.addEventListener('mouseenter', handleMouseEnter)
+      outerLine.addEventListener('mouseleave', handleMouseLeave)
 
       /** 存储事件监听器引用，以便后续移除 */
-      line._mouseEnterListener = handleMouseEnter
-      line._mouseLeaveListener = handleMouseLeave
+      outerLine._mouseEnterListener = handleMouseEnter
+      outerLine._mouseLeaveListener = handleMouseLeave
     }
 
     /** 顶部拖拽线 */
     if (edges.top) {
-      const line = document.createElement('div')
-      Object.assign(line.style, lineStyle, {
-        top: `-${margin}px`,
+      // 外部容器
+      const outerLine = document.createElement('div')
+      // 内部热区div
+      const innerLine = document.createElement('div')
+      
+      // 设置外部容器样式（热区放大）
+      Object.assign(outerLine.style, lineStyle, {
+        top: `-${hotZoneSize / 2 + margin}px`,
         left: '0',
         width: '100%',
-        height: '2px',
+        height: `${hotZoneSize}px`,
         cursor: 'row-resize',
         zIndex: '10',
+        alignItems: 'center',
+        justifyContent: 'center',
       })
-      setupHoverEffect(line)
-      element.appendChild(line)
-      resizeLines.set('top', line)
+      
+      // 设置内部线条样式（实际显示的线条）
+      Object.assign(innerLine.style, innerLineStyle, {
+        width: '100%',
+        height: '2px',
+      })
+      
+      // 将内部线条添加到外部容器
+      outerLine.appendChild(innerLine)
+      // 设置hover效果
+      setupHoverEffect(outerLine, innerLine)
+      // 添加到元素
+      element.appendChild(outerLine)
+      // 存储引用
+      resizeLines.set('top', outerLine)
     }
 
     /** 右侧拖拽线 */
     if (edges.right) {
-      const line = document.createElement('div')
-      Object.assign(line.style, lineStyle, {
+      // 外部容器
+      const outerLine = document.createElement('div')
+      // 内部热区div
+      const innerLine = document.createElement('div')
+      
+      // 设置外部容器样式（热区放大）
+      Object.assign(outerLine.style, lineStyle, {
         top: '0',
-        right: `-${margin}px`,
-        width: '2px',
+        right: `-${hotZoneSize / 2 + margin}px`,
+        width: `${hotZoneSize}px`,
         height: '100%',
         cursor: 'col-resize',
         zIndex: '10',
+        alignItems: 'center',
+        justifyContent: 'center',
       })
-      setupHoverEffect(line)
-      element.appendChild(line)
-      resizeLines.set('right', line)
+      
+      // 设置内部线条样式（实际显示的线条）
+      Object.assign(innerLine.style, innerLineStyle, {
+        width: '2px',
+        height: '100%',
+      })
+      
+      // 将内部线条添加到外部容器
+      outerLine.appendChild(innerLine)
+      // 设置hover效果
+      setupHoverEffect(outerLine, innerLine)
+      // 添加到元素
+      element.appendChild(outerLine)
+      // 存储引用
+      resizeLines.set('right', outerLine)
     }
 
     /** 底部拖拽线 */
     if (edges.bottom) {
-      const line = document.createElement('div')
-      Object.assign(line.style, lineStyle, {
-        bottom: `-${margin}px`,
+      // 外部容器
+      const outerLine = document.createElement('div')
+      // 内部热区div
+      const innerLine = document.createElement('div')
+      
+      // 设置外部容器样式（热区放大）
+      Object.assign(outerLine.style, lineStyle, {
+        bottom: `-${hotZoneSize / 2 + margin}px`,
         left: '0',
         width: '100%',
-        height: '2px',
+        height: `${hotZoneSize}px`,
         cursor: 'row-resize',
         zIndex: '10',
+        alignItems: 'center',
+        justifyContent: 'center',
       })
-      setupHoverEffect(line)
-      element.appendChild(line)
-      resizeLines.set('bottom', line)
+      
+      // 设置内部线条样式（实际显示的线条）
+      Object.assign(innerLine.style, innerLineStyle, {
+        width: '100%',
+        height: '2px',
+      })
+      
+      // 将内部线条添加到外部容器
+      outerLine.appendChild(innerLine)
+      // 设置hover效果
+      setupHoverEffect(outerLine, innerLine)
+      // 添加到元素
+      element.appendChild(outerLine)
+      // 存储引用
+      resizeLines.set('bottom', outerLine)
     }
 
     /** 左侧拖拽线 */
     if (edges.left) {
-      const line = document.createElement('div')
-      Object.assign(line.style, lineStyle, {
+      // 外部容器
+      const outerLine = document.createElement('div')
+      // 内部热区div
+      const innerLine = document.createElement('div')
+      
+      // 设置外部容器样式（热区放大）
+      Object.assign(outerLine.style, lineStyle, {
         top: '0',
-        left: `-${margin}px`,
-        width: '2px',
+        left: `-${hotZoneSize / 2 + margin}px`,
+        width: `${hotZoneSize}px`,
         height: '100%',
         cursor: 'col-resize',
         zIndex: '10',
+        alignItems: 'center',
+        justifyContent: 'center',
       })
-      setupHoverEffect(line)
-      element.appendChild(line)
-      resizeLines.set('left', line)
+      
+      // 设置内部线条样式（实际显示的线条）
+      Object.assign(innerLine.style, innerLineStyle, {
+        width: '2px',
+        height: '100%',
+      })
+      
+      // 将内部线条添加到外部容器
+      outerLine.appendChild(innerLine)
+      // 设置hover效果
+      setupHoverEffect(outerLine, innerLine)
+      // 添加到元素
+      element.appendChild(outerLine)
+      // 存储引用
+      resizeLines.set('left', outerLine)
     }
   }
 
@@ -405,7 +507,7 @@ export function makeElementDraggableResizable(
     resizeLines.forEach(line => {
       /** 始终保持pointerEvents为auto以支持hover效果 */
       line.style.pointerEvents = 'auto'
-      line.style.display = 'block' // 确保线条总是显示
+      line.style.display = 'flex' // 确保线条总是显示
     })
   }
 
@@ -1016,8 +1118,6 @@ export function makeElementDraggableResizable(
   // 返回清理函数和更新方法
   return {
     cleanup: () => {
-      // 不再需要清除动画帧
-
       // 移除拖拽线
       resizeLines.forEach(line => {
         // 移除事件监听器
