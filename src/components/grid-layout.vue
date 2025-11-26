@@ -42,7 +42,7 @@ import {
   getColsFromBreakpoint,
 } from '../helpers/responsive'
 
-import type { Breakpoint, Layout, LayoutInstance } from '../helpers/types'
+import type { Breakpoint, Layout, LayoutInstance, LayoutItem } from '../helpers/types'
 import type { GridLayoutProps } from './types'
 
 // Props：控制布局行为的核心参数，含响应式断点、拖拽/缩放开关、压缩策略等
@@ -641,7 +641,7 @@ function findDifference(layout: Layout, originalLayout: Layout) {
     <slot v-if="$slots.default"></slot>
     <template v-else>
       <GridItem v-for="item in currentLayout" :key="item.i" v-bind="item">
-        <slot name="item" :item="item"></slot>
+        <slot name="item" :item="item as LayoutItem"></slot>
       </GridItem>
     </template>
     <!-- 占位元素：拖拽或缩放时显示，与真实项尺寸/位置同步 -->
