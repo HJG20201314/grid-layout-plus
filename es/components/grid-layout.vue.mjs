@@ -256,7 +256,9 @@ const De = /* @__PURE__ */ Q({
         ref_for: !0
       }, l), {
         default: se(() => [
-          T(e.$slots, "item", { item: l })
+          T(e.$slots, "item", {
+            item: l
+          })
         ]),
         _: 2
       }, 1040))), 128)),

@@ -1,4 +1,4 @@
-import { Breakpoint } from '../helpers/types';
+import { Breakpoint, LayoutItem } from '../helpers/types';
 import { GridLayoutProps } from './types';
 /**
  * getItem
@@ -29,21 +29,7 @@ declare function __VLS_template(): {
     slots: {
         default?(_: {}): any;
         item?(_: {
-            item: {
-                minW?: number | undefined;
-                minH?: number | undefined;
-                maxW?: number | undefined;
-                maxH?: number | undefined;
-                moved?: boolean | undefined;
-                static?: boolean | undefined;
-                isDraggable?: boolean | undefined;
-                isResizable?: boolean | undefined;
-                w: number;
-                h: number;
-                x: number;
-                y: number;
-                i: number | string;
-            };
+            item: LayoutItem;
         }): any;
     };
     refs: {
