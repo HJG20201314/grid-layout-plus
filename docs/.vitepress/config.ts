@@ -81,6 +81,11 @@ export default defineConfig({
               { text: 'Dynamic Update Test', link: '/example/dynamic-update-test' },
               { text: 'CSS Units Support', link: '/example/css-units' },
               { text: 'Drawer Wrapper Example', link: '/example/drawer-wrapper' },
+              // Hooks versions
+              { text: 'Draggable Resizable (Hooks)', link: '/example/draggable-resizable-example-hooks' },
+              { text: 'Dynamic Update (Hooks)', link: '/example/dynamic-update-test-hooks' },
+              { text: 'CSS Units (Hooks)', link: '/example/css-units-hooks' },
+              { text: 'Drawer Wrapper (Hooks)', link: '/example/drawer-wrapper-hooks' },
             ],
           },
         ],
@@ -143,6 +148,11 @@ export default defineConfig({
               { text: '动态更新测试', link: '/zh/example/dynamic-update-test' },
               { text: 'CSS 单位支持', link: '/zh/example/css-units' },
               { text: '抽屉包装组件示例', link: '/zh/example/drawer-wrapper' },
+              // Hooks 版本
+              { text: '可拖拽调整大小（Hooks）', link: '/zh/example/draggable-resizable-example-hooks' },
+              { text: '动态更新（Hooks）', link: '/zh/example/dynamic-update-test-hooks' },
+              { text: 'CSS 单位（Hooks）', link: '/zh/example/css-units-hooks' },
+              { text: '抽屉包装（Hooks）', link: '/zh/example/drawer-wrapper-hooks' },
             ],
           },
         ],
