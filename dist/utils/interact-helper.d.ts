@@ -79,6 +79,8 @@ export interface ResizeOptions {
     maxWidth?: number | string;
     /** 最大高度 */
     maxHeight?: number | string;
+    /** 调整大小热区大小 */
+    hotZoneSize?: number;
 }
 /**
  * 拖拽调整大小配置接口
